@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.opdownloader.app">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Minimum essential permissions only. No broad storage or invasive permissions requested. -->
     <uses-permission android:name="android.permission.INTERNET" />

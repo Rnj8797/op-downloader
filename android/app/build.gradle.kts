@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -89,6 +90,12 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    // Dagger Hilt
+    implementation("com.google.dagger:hilt-android:2.51")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("com.google.dagger:hilt-compiler:2.51")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
 
     // Security & Biometrics
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
