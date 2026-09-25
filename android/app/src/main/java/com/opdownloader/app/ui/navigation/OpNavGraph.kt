@@ -101,10 +101,26 @@ fun OpNavGraph(
                     availableQualities = qualities
                 )
 
+                val context = androidx.compose.ui.platform.LocalContext.current
+
                 PreviewBottomSheet(
                     previewData = previewData,
                     onDismiss = { activePreviewUrl = null },
                     onConfirmDownload = { quality ->
+                        val targetUrl = activePreviewUrl ?: ""
+                        val selectedOpt = qualities.find { it.id == quality }
+                        val size = selectedOpt?.sizeLabel ?: previewData.sizeText ?: "50 MB"
+
+                        // Enqueue and begin live download
+                        com.opdownloader.app.data.DownloadStateManager.startDownload(
+                            context = context,
+                            url = targetUrl,
+                            qualityId = quality,
+                            platformTitle = platformName,
+                            isVideo = previewData.mediaType == "Video",
+                            sizeText = size
+                        )
+
                         activePreviewUrl = null
                         // Switches to Downloads tab to display live progress
                         currentScreen = "downloads"

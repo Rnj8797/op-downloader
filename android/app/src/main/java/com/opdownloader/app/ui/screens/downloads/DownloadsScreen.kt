@@ -55,47 +55,9 @@ fun DownloadsScreen(
 ) {
     var selectedTab by remember { mutableStateOf(DownloadTab.ALL) }
 
-    // Sample dynamic tasks list
-    var tasks by remember {
-        mutableStateOf(
-            listOf(
-                DownloadTask(
-                    id = "active_1",
-                    filename = "Video_01.mp4",
-                    isVideo = true,
-                    status = ItemStatus.DOWNLOADING,
-                    progress = 0.68f,
-                    downloadedBytesText = "1.36 GB",
-                    totalBytesText = "2.00 GB",
-                    speedText = "8.4 MB/s",
-                    etaText = "1:17 remaining",
-                    dateText = "Just now"
-                ),
-                DownloadTask(
-                    id = "comp_1",
-                    filename = "Nature_Wallpaper_4K.jpg",
-                    isVideo = false,
-                    status = ItemStatus.COMPLETED,
-                    progress = 1.0f,
-                    downloadedBytesText = "4.2 MB",
-                    totalBytesText = "4.2 MB",
-                    dateText = "Today, 11:30"
-                ),
-                DownloadTask(
-                    id = "comp_2",
-                    filename = "Podcast_Episode_12.mp4",
-                    isVideo = true,
-                    status = ItemStatus.COMPLETED,
-                    progress = 1.0f,
-                    downloadedBytesText = "82 MB",
-                    totalBytesText = "82 MB",
-                    dateText = "Yesterday"
-                )
-            )
-        )
-    }
+    val tasks = com.opdownloader.app.data.DownloadStateManager.tasks
 
-    val filteredTasks = remember(tasks, selectedTab) {
+    val filteredTasks = remember(tasks.toList(), selectedTab) {
         when (selectedTab) {
             DownloadTab.ALL -> tasks
             DownloadTab.VIDEOS -> tasks.filter { it.isVideo }
@@ -173,23 +135,21 @@ fun DownloadsScreen(
                             ActiveDownloadCard(
                                 task = task,
                                 onPauseToggle = {
-                                    tasks = tasks.map {
-                                        if (it.id == task.id) {
-                                            it.copy(
-                                                status = if (it.status == ItemStatus.DOWNLOADING) ItemStatus.PAUSED else ItemStatus.DOWNLOADING
-                                            )
-                                        } else it
+                                    if (task.status == ItemStatus.DOWNLOADING) {
+                                        com.opdownloader.app.data.DownloadStateManager.pauseDownload(task.id)
+                                    } else {
+                                        com.opdownloader.app.data.DownloadStateManager.resumeDownload(task.id)
                                     }
                                 },
                                 onCancel = {
-                                    tasks = tasks.filter { it.id != task.id }
+                                    com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
                                 }
                             )
                         } else {
                             CompletedDownloadCard(
                                 task = task,
                                 onDeleteHistory = {
-                                    tasks = tasks.filter { it.id != task.id }
+                                    com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
                                 }
                             )
                         }

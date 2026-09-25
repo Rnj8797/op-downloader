@@ -65,13 +65,8 @@ fun HomeScreen(
     val clipboardManager = LocalClipboardManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Sample recent downloads for clean display
-    val recentItems = remember {
-        listOf(
-            RecentDownloadItem("1", "Sample_Video_01.mp4", "82 MB", true, "Today, 14:20"),
-            RecentDownloadItem("2", "Nature_Photo_04.jpg", "4.2 MB", false, "Yesterday")
-        )
-    }
+    // Real reactive recent downloads from DownloadStateManager
+    val recentItems = com.opdownloader.app.data.DownloadStateManager.recentDownloads
 
     Scaffold(
         topBar = {
@@ -301,9 +296,32 @@ fun HomeScreen(
                 }
             }
 
-            // Recent Download Compact Cards
-            items(recentItems) { item ->
-                RecentDownloadCard(item = item)
+            // Recent Download Compact Cards or Empty State
+            if (recentItems.isEmpty()) {
+                item {
+                    OpCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.CloudDownload,
+                                contentDescription = null,
+                                tint = TextTertiary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "No downloads yet. Paste an Instagram Reel or YouTube link above.",
+                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(recentItems, key = { it.id }) { item ->
+                    RecentDownloadCard(item = item)
+                }
             }
 
             item {
