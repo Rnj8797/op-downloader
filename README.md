@@ -102,25 +102,56 @@ op-downloader/
 7. **Phase 7: Background & Resumable Downloads Engine**
 8. **Phase 8: Security Hardening & Container Sandbox Isolation**
 9. **Phase 9: Comprehensive Testing Suite**
-10. **Phase 10: CI/CD Pipelines & Cloud Deployment**
+10. **Phase 10: CI/CD Pipelines & Release Validation**
 
 ---
 
-## 5. Quick Start (Development)
+## 5. Getting Started & Installation
+
+### Android Application
+* **Supported Versions:** Android 8.0 (API 26) through Android 14, 15, and Android 16 (API 36).
+* **Build Requirements:** OpenJDK 17+, Gradle 8.4+, Android SDK 34+.
+* **Build Command:**
+  ```bash
+  cd android
+  ./gradlew assembleRelease
+  ```
+* **Installation:**
+  ```bash
+  adb install -r android/app/build/outputs/apk/release/app-release.apk
+  ```
 
 ### Backend Services
 ```bash
 # 1. Copy environment template
 cp .env.example .env
 
-# 2. Start PostgreSQL, Redis, API, and Worker containers
+# 2. Start PostgreSQL 16, Redis 7, FastAPI Gateway, and Worker Sandbox
 docker compose up -d --build
 
-# 3. Check health endpoint
+# 3. Verify health status
 curl http://localhost:8000/api/v1/health
 ```
 
-### Android Application
-* Open `/android` in Android Studio Ladybug / Meerkat or later.
-* Requires JDK 17+ and Android SDK 34+.
-* Build and run on an Android 10+ (API 29+) emulator or physical device.
+---
+
+## 6. Security Model & Architecture
+
+* **SSRF Guard:** Strict DNS pre-resolution, IP parsing (including decimal, hex, and IPv4-mapped IPv6), and manual redirect hopping verification (`safe_fetch_with_redirect_pinching`).
+* **Memory Safety:** Streaming reads bounded to 64KB buffers (`aiter_bytes`). Media files are never buffered entirely in RAM.
+* **Storage Protection:** Enforces 2GB maximum limit (`MAX_DOWNLOAD_SIZE_BYTES`) against infinite-stream DoS attacks.
+* **Worker Sandbox:** Runs as non-root user `10001:10001`, `cap_drop: [ALL]`, and `read_only: true` with a dedicated temporary `tmpfs` volume.
+* **Data Minimization:** User source URLs are stored only as SHA-256 hashes (`source_url_hash`), protecting user privacy.
+* **Android Keystore:** Hardware-backed AES-256-GCM encryption for stored tokens and configuration data.
+
+---
+
+## 7. Operational Limitations & Disclaimers
+
+> [!IMPORTANT]
+> **Operational & Compliance Disclaimers:**
+> - **No "100% Secure" or "Unhackable" Claims:** Security is an ongoing practice of defense-in-depth and active monitoring. Passing automated test suites validates implemented mitigations against known attack vectors under tested conditions.
+> - **Strictly Authorized Sources:** OP Downloader does not circumvention DRM, CAPTCHAs, private accounts, paywalls, or access controls. Only explicitly authorized public links, direct media URLs, or user-owned content are supported.
+> - **Platform Compatibility:** Compatibility is not guaranteed for arbitrary closed third-party web platforms that do not provide direct media URLs or public download APIs.
+> - **Fair Use Limits:** Standard rate limiting (10 req/hr anonymous, 50 req/hr authenticated) and concurrency limits (max 2 active downloads) are strictly enforced to prevent abuse.
+
