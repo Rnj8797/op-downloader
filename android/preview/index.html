@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OP Downloader - Android UI Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0B0D10;
+      --surface-card: #15181D;
+      --surface-elevated: #1E2229;
+      --surface-border: #282D35;
+      --text-primary: #FFFFFF;
+      --text-secondary: #9CA3AF;
+      --text-tertiary: #6B7280;
+      --accent-primary: #6366F1;
+      --accent-secondary: #8B5CF6;
+      --accent-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+      --status-success: #22C55E;
+      --status-error: #EF4444;
+      --status-warning: #F59E0B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #050608;
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* Android Device Shell */
+    .device-frame {
+      width: 100%;
+      max-width: 412px;
+      height: 860px;
+      background: var(--bg-base);
+      border-radius: 40px;
+      border: 4px solid #232730;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Android Status Bar */
+    .status-bar {
+      height: 38px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      z-index: 10;
+    }
+
+    /* Screen Views */
+    .screen-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px 84px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .screen-content::-webkit-scrollbar {
+      display: none;
+    }
+
+    .screen-panel {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .screen-panel.active {
+      display: flex;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Top Bar Header */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .op-monogram {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-gradient);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: -0.5px;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--surface-card);
+      color: var(--text-primary);
+    }
+
+    /* Hero Typography */
+    .hero-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    /* Cards */
+    .op-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Input Card */
+    .input-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .url-input-container {
+      display: flex;
+      align-items: center;
+      background: var(--surface-elevated);
+      border-radius: 12px;
+      padding: 6px 12px;
+      gap: 10px;
+    }
+
+    .url-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .url-input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .paste-action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--surface-border);
+      border: none;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    .paste-action-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-badge.success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--status-success);
+    }
+
+    .status-badge.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--status-error);
+    }
+
+    /* CTA Button */
+    .op-cta-btn {
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent-gradient);
+      color: #fff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+      transition: all 0.2s;
+    }
+
+    .op-cta-btn:hover {
+      opacity: 0.95;
+    }
+
+    .op-cta-btn:disabled {
+      background: var(--surface-border);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Disclaimer Card */
+    .disclaimer-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface-elevated);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Recent Item Compact Card */
+    .recent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recent-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 12px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .recent-card:hover {
+      background: var(--surface-elevated);
+    }
+
+    .thumb-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      background: var(--surface-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary);
+    }
+
+    .item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 3px;
+    }
+
+    .item-status-saved {
+      color: var(--status-success);
+      font-weight: 600;
+    }
+
+    /* Downloads Screen Components */
+    .tab-pills {
+      display: flex;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .tab-pill {
+      flex: 1;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-pill.active {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    /* Live Progress Bar */
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 68%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-outline {
+      flex: 1;
+      height: 40px;
+      background: transparent;
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-outline:hover {
+      background: var(--surface-elevated);
+    }
+
+    .btn-cancel {
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--status-error);
+    }
+
+    .btn-cancel:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      background: var(--surface-card);
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 33%;
+      height: 48px;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* Modal Bottom Sheet */
+    .sheet-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+      backdrop-filter: blur(4px);
+    }
+
+    .sheet-overlay.active {
+      display: flex;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      background: var(--surface-card);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 16px 22px 36px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-top: 1px solid var(--surface-border);
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-drag {
+      width: 36px;
+      height: 4px;
+      background: var(--surface-border);
+      border-radius: 2px;
+      align-self: center;
+      margin-bottom: 4px;
+    }
+
+    .quality-chips {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .quality-chip {
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .quality-chip.selected {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    .chip-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .chip-size {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .quality-chip.selected .chip-size {
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Android Device Shell -->
+  <div class="device-frame">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>14:20</span>
+      <span>5G  100%</span>
+    </div>
+
+    <!-- Scrollable Screen Content -->
+    <div class="screen-content">
+
+      <!-- ========================================== -->
+      <!-- SCREEN 1: HOME -->
+      <!-- ========================================== -->
+      <div id="screen-home" class="screen-panel active">
+        <!-- Top App Bar -->
+        <div class="top-bar">
+          <div class="logo-group">
+            <div class="op-monogram">OP</div>
+            <div class="brand-title">OP Downloader</div>
+          </div>
+          <button class="icon-btn" onclick="showScreen('settings')" title="Settings" aria-label="Settings">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Headline Hero -->
+        <div>
+          <h1 class="hero-title">Save your media</h1>
+          <p class="hero-subtitle">Paste a supported link to get started.</p>
+        </div>
+
+        <!-- Main Input Card with Smart Paste -->
+        <div class="op-card">
+          <span class="input-label">Paste your link...</span>
+          <div class="url-input-container">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <input type="text" id="urlInput" class="url-input" placeholder="https://example.com/video.mp4" oninput="validateInput()">
+            <button class="paste-action-btn" id="pasteBtn" onclick="simulateSmartPaste()" title="Smart Paste" aria-label="Paste URL">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Dynamic Status Badge -->
+          <div id="validationBadge" style="display: none;"></div>
+
+          <button id="downloadCta" class="op-cta-btn" disabled onclick="openPreviewSheet()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            DOWNLOAD
+          </button>
+        </div>
+
+        <!-- Authorized Source Badge -->
+        <div class="disclaimer-card">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Only user-owned content or authorized public media can be saved to device Gallery.</span>
+        </div>
+
+        <!-- Recent Downloads -->
+        <div class="recent-header">
+          <span style="font-size: 17px; font-weight: 700;">Recent Downloads</span>
+          <span style="font-size: 13px; color: var(--accent-primary); font-weight: 600; cursor: pointer;" onclick="showScreen('downloads')">View All</span>
+        </div>
+
+        <div class="recent-card" onclick="showScreen('downloads')">
+          <div class="thumb-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div class="item-title">Sample_Video_01.mp4</div>
+            <div class="item-meta">
+              <span>82 MB</span>
+              <span>•</span>
+              <span class="item-status-saved">✓ Saved to Gallery</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-card" onclick="showScreen('downloads')">
+          <div class="thumb-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div class="item-title">Nature_Photo_04.jpg</div>
+            <div class="item-meta">
+              <span>4.2 MB</span>
+              <span>•</span>
+              <span class="item-status-saved">✓ Saved to Gallery</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- SCREEN 2: DOWNLOADS -->
+      <!-- ========================================== -->
+      <div id="screen-downloads" class="screen-panel">
+        <h1 style="font-size: 24px; font-weight: 800;">Downloads</h1>
+
+        <!-- Filter Tabs -->
+        <div class="tab-pills">
+          <button class="tab-pill active" onclick="filterTab(this, 'all')">All</button>
+          <button class="tab-pill" onclick="filterTab(this, 'videos')">Videos</button>
+          <button class="tab-pill" onclick="filterTab(this, 'photos')">Photos</button>
+        </div>
+
+        <!-- Active Downloading Card -->
+        <div class="op-card" id="activeDownloadCard">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="thumb-box" style="background: rgba(99, 102, 241, 0.2);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </div>
+              <div>
+                <div class="item-title">Video_01.mp4</div>
+                <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;" id="statusText">Downloading...</div>
+              </div>
+            </div>
+            <span style="font-size: 18px; font-weight: 800; color: var(--accent-primary);" id="pctText">68%</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill" style="width: 68%;"></div>
+          </div>
+
+          <!-- Metrics -->
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
+            <span id="bytesText">1.36 GB / 2.00 GB</span>
+            <span id="speedEtaText">8.4 MB/s • 1:17 remaining</span>
+          </div>
+
+          <!-- Controls -->
+          <div class="btn-row">
+            <button class="btn-outline" id="pauseBtn" onclick="togglePause()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+              PAUSE
+            </button>
+            <button class="btn-outline btn-cancel" onclick="cancelDownload()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              CANCEL
+            </button>
+          </div>
+        </div>
+
+        <!-- Completed Download Cards -->
+        <div class="op-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="thumb-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </div>
+              <div>
+                <div class="item-title">Nature_Wallpaper_4K.jpg</div>
+                <div class="item-meta">
+                  <span>4.2 MB</span>
+                  <span>•</span>
+                  <span>Today, 11:30</span>
+                </div>
+              </div>
+            </div>
+            <span class="item-status-saved" style="font-size: 12px;">✓ Gallery</span>
+          </div>
+        </div>
+
+        <div class="op-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="thumb-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </div>
+              <div>
+                <div class="item-title">Podcast_Episode_12.mp4</div>
+                <div class="item-meta">
+                  <span>82 MB</span>
+                  <span>•</span>
+                  <span>Yesterday</span>
+                </div>
+              </div>
+            </div>
+            <span class="item-status-saved" style="font-size: 12px;">✓ Gallery</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- SCREEN 3: SETTINGS -->
+      <!-- ========================================== -->
+      <div id="screen-settings" class="screen-panel">
+        <h1 style="font-size: 24px; font-weight: 800;">Settings</h1>
+
+        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">DOWNLOAD</span>
+        <div class="op-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Default Quality</div>
+              <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">Original</div>
+            </div>
+            <span style="color: var(--text-tertiary); font-size: 13px;">Change ▾</span>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Auto-save to Gallery</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Direct MediaStore registration</div>
+            </div>
+            <input type="checkbox" checked style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Wi-Fi Only</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Protect mobile data usage</div>
+            </div>
+            <input type="checkbox" style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Concurrent Downloads</div>
+              <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">2 tasks</div>
+            </div>
+            <span style="color: var(--text-tertiary); font-size: 13px;">Edit ▾</span>
+          </div>
+        </div>
+
+        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">SECURITY</span>
+        <div class="op-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Biometric App Lock</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Require fingerprint or PIN</div>
+            </div>
+            <input type="checkbox" style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="alert('Temporary cache files cleared.')">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Clear Temporary Files</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Purge transient scratch buffer</div>
+            </div>
+            <span style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">Clear</span>
+          </div>
+        </div>
+
+        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">ABOUT</span>
+        <div class="op-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 600;">Version</span>
+            <span style="font-size: 13px; color: var(--text-secondary);">1.0.0</span>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="font-size: 14px; font-weight: 600; cursor: pointer;">Privacy Policy</div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="font-size: 14px; font-weight: 600; cursor: pointer;">Terms of Service</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-home" onclick="showScreen('home')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" id="nav-downloads" onclick="showScreen('downloads')">
+        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        <span>Downloads</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Preview Modal Bottom Sheet -->
+    <div class="sheet-overlay" id="previewSheet" onclick="closeSheetOnOverlay(event)">
+      <div class="bottom-sheet">
+        <div class="sheet-drag"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 18px; font-weight: 700;">Preview</span>
+          <button class="icon-btn" style="width: 32px; height: 32px;" onclick="closePreviewSheet()">✕</button>
+        </div>
+
+        <div style="height: 140px; background: var(--surface-elevated); border: 1px solid var(--surface-border); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent-primary)">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Direct Public Media</span>
+          <span style="position: absolute; bottom: 8px; right: 10px; background: rgba(0,0,0,0.8); font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">02:31</span>
+        </div>
+
+        <div>
+          <div style="font-size: 15px; font-weight: 700;">Authorized Sample Stream</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Video • 02:31 • 82 MB</div>
+        </div>
+
+        <div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Available Qualities:</div>
+          <div class="quality-chips">
+            <div class="quality-chip selected" onclick="selectChip(this)">
+              <div class="chip-label">Original</div>
+              <div class="chip-size">82 MB</div>
+            </div>
+            <div class="quality-chip" onclick="selectChip(this)">
+              <div class="chip-label">1080p</div>
+              <div class="chip-size">54 MB</div>
+            </div>
+            <div class="quality-chip" onclick="selectChip(this)">
+              <div class="chip-label">720p</div>
+              <div class="chip-size">31 MB</div>
+            </div>
+            <div class="quality-chip" onclick="selectChip(this)">
+              <div class="chip-label">480p</div>
+              <div class="chip-size">18 MB</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="op-cta-btn" onclick="startDownloadFromSheet()">
+          START DOWNLOAD
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      document.getElementById('screen-' + screenId).classList.add('active');
+      document.getElementById('nav-' + screenId).classList.add('active');
+    }
+
+    function simulateSmartPaste() {
+      const input = document.getElementById('urlInput');
+      input.value = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      validateInput();
+    }
+
+    function validateInput() {
+      const val = document.getElementById('urlInput').value.trim();
+      const badge = document.getElementById('validationBadge');
+      const cta = document.getElementById('downloadCta');
+
+      if (!val) {
+        badge.style.display = 'none';
+        cta.disabled = true;
+        return;
+      }
+
+      if (val.startsWith('https://') && (val.includes('.mp4') || val.includes('commondatastorage') || val.includes('unsplash') || val.includes('archive.org'))) {
+        badge.style.display = 'block';
+        badge.innerHTML = '<span class="status-badge success">✓ Link detected: Direct Media</span>';
+        cta.disabled = false;
+      } else {
+        badge.style.display = 'block';
+        badge.innerHTML = '<span class="status-badge error">✕ This link isn\'t supported.</span>';
+        cta.disabled = true;
+      }
+    }
+
+    function openPreviewSheet() {
+      document.getElementById('previewSheet').classList.add('active');
+    }
+
+    function closePreviewSheet() {
+      document.getElementById('previewSheet').classList.remove('active');
+    }
+
+    function closeSheetOnOverlay(e) {
+      if (e.target.id === 'previewSheet') {
+        closePreviewSheet();
+      }
+    }
+
+    function selectChip(el) {
+      document.querySelectorAll('.quality-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function startDownloadFromSheet() {
+      closePreviewSheet();
+      showScreen('downloads');
+    }
+
+    let isPaused = false;
+    function togglePause() {
+      isPaused = !isPaused;
+      const btn = document.getElementById('pauseBtn');
+      const status = document.getElementById('statusText');
+      if (isPaused) {
+        btn.innerHTML = '▶ RESUME';
+        status.innerText = 'Paused';
+        status.style.color = 'var(--status-warning)';
+      } else {
+        btn.innerHTML = '❚❚ PAUSE';
+        status.innerText = 'Downloading...';
+        status.style.color = 'var(--accent-primary)';
+      }
+    }
+
+    function cancelDownload() {
+      document.getElementById('activeDownloadCard').style.display = 'none';
+    }
+
+    function filterTab(el, type) {
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>

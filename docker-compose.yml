@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 - Relational Database
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: op-downloader-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-op_downloader}
+      POSTGRES_USER: ${POSTGRES_USER:-op_app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-op_secret_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - op-backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-op_app_user} -d ${POSTGRES_DB:-op_downloader}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # Redis 7 - Ephemeral Cache, Rate Limiter & Message Broker
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: op-downloader-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-op_redis_secret}"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - op-backend-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-op_redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # FastAPI API Gateway
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: op-downloader-api
+    restart: unless-stopped
+    user: "10001:10001"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8000:8000"
+    networks:
+      - op-backend-net
+      - op-worker-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ----------------------------------------------------------------------------
+  # Isolated Worker Sandbox (No privileged mode, dropped caps, restricted limits)
+  # ----------------------------------------------------------------------------
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: op-downloader-worker
+    restart: unless-stopped
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /var/media_scratch:rw,noexec,nosuid,size=1024m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - SCRATCH_STORAGE_DIR=/var/media_scratch
+    networks:
+      - op-worker-net
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  op-backend-net:
+    internal: true
+  op-worker-net:
+    internal: false
