@@ -22,6 +22,28 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+                ?: (project.findProperty("ANDROID_KEYSTORE_PATH") as? String)
+            val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                ?: (project.findProperty("ANDROID_KEYSTORE_PASSWORD") as? String)
+            val keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                ?: (project.findProperty("ANDROID_KEY_ALIAS") as? String)
+            val keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                ?: (project.findProperty("ANDROID_KEY_PASSWORD") as? String)
+
+            if (!keystorePath.isNullOrBlank() && file(keystorePath).exists()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -30,7 +52,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug") // Replaced with CI/CD keystore in release pipeline
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile != null && releaseSigning.storeFile!!.exists()) {
+                signingConfig = releaseSigning
+            } else {
+                signingConfig = null
+            }
         }
         debug {
             isMinifyEnabled = false

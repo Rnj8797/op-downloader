@@ -27,14 +27,89 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run Full Master Test Runner
+      - name: Run Full Master Regression Test Runner
         run: |
           pip install -r backend/requirements.txt
           python tests/run_all_tests.py
 
-      - name: Create GitHub Release
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Check Production Signing Secrets
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "::error::Production signing secrets are missing. Release build cannot proceed without production signing credentials."
+            exit 1
+          fi
+
+      - name: Decode Temporary Release Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/release.keystore
+          chmod 600 /tmp/release.keystore
+
+      - name: Build Production Signed Release APK
+        env:
+          ANDROID_KEYSTORE_PATH: /tmp/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew || true
+          gradle assembleRelease
+
+      - name: Verify Release APK Signature & Security Gate
+        run: |
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "::error::Release APK was not generated."
+            exit 1
+          fi
+
+          # Locate apksigner
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner tool not found."
+            exit 1
+          fi
+
+          echo "Verifying APK with $APKSIGNER..."
+          $APKSIGNER verify --verbose --print-certs "$APK_PATH" > /tmp/cert_info.txt
+          cat /tmp/cert_info.txt
+
+          # Hard Security Gate 1: Must NOT be signed with Android Debug certificate
+          if grep -q "CN=Android Debug" /tmp/cert_info.txt; then
+            echo "::error::SECURITY GATE FAILED: The APK is signed with Android Debug certificate! Production release requires an official production keystore."
+            exit 1
+          fi
+
+          # Hard Security Gate 2: Must verify using v2 signature scheme
+          if ! grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/cert_info.txt; then
+            echo "::error::SECURITY GATE FAILED: APK signature scheme v2 verification failed."
+            exit 1
+          fi
+
+          echo "APK signature successfully verified against production security gates."
+
+      - name: Generate Checksums
+        run: |
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          cp "$APK_PATH" ./op-downloader-v1.0.0.apk
+          sha256sum op-downloader-v1.0.0.apk > checksums.txt
+          cat checksums.txt
+
+      - name: Secure Keystore Cleanup
+        if: always()
+        run: |
+          shred -u /tmp/release.keystore 2>/dev/null || rm -f /tmp/release.keystore /tmp/cert_info.txt
+
+      - name: Create Draft GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          draft: false
+          draft: true
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
+          body_path: docs/release-notes-v1.0.0.md
+          files: |
+            op-downloader-v1.0.0.apk
+            checksums.txt
