@@ -188,11 +188,12 @@ fun HomeScreen(
                         // Smart Paste Button
                         IconButton(
                             onClick = {
-                                // Reads clipboard strictly on user-triggered tap
+                                // Reads clipboard strictly on user-triggered tap and normalizes
                                 val clip = clipboardManager.getText()?.text
                                 if (!clip.isNullOrBlank()) {
-                                    urlText = clip.trim()
-                                    validationState = evaluateUrl(clip.trim()) { provider ->
+                                    val cleaned = cleanAndNormalizeUrl(clip)
+                                    urlText = cleaned
+                                    validationState = evaluateUrl(cleaned) { provider ->
                                         detectedProviderName = provider
                                     }
                                 }
@@ -380,7 +381,41 @@ fun RecentDownloadCard(
 }
 
 /**
- * Client-Side Immediate URL Syntax & Provider Detection Helper
+ * Auto-cleans and normalizes URLs from clipboard or user input,
+ * auto-fixing missing schemes or cut-off Instagram/YouTube prefixes.
+ */
+fun cleanAndNormalizeUrl(rawInput: String): String {
+    var text = rawInput.trim().trim('\'', '"', '`')
+
+    // Extract URL if user pasted surrounded text (e.g., "Check this out https://instagram.com/reel/...")
+    val urlRegex = Regex("""https?://[^\s]+""")
+    val match = urlRegex.find(text)
+    if (match != null) {
+        text = match.value
+    }
+
+    // Auto-fix Instagram URLs if domain was omitted
+    if (text.startsWith("reel/", ignoreCase = true) || text.startsWith("/reel/", ignoreCase = true) ||
+        text.startsWith("p/", ignoreCase = true) || text.startsWith("/p/", ignoreCase = true) ||
+        text.startsWith("stories/", ignoreCase = true) || text.startsWith("/stories/", ignoreCase = true)) {
+        text = "https://www.instagram.com/" + text.removePrefix("/")
+    } else if (text.startsWith("instagram.com/", ignoreCase = true) || text.startsWith("www.instagram.com/", ignoreCase = true)) {
+        text = "https://" + text
+    } else if (text.startsWith("youtu.be/", ignoreCase = true) || text.startsWith("youtube.com/", ignoreCase = true) || text.startsWith("www.youtube.com/", ignoreCase = true)) {
+        text = "https://" + text
+    } else if (text.startsWith("facebook.com/", ignoreCase = true) || text.startsWith("fb.watch/", ignoreCase = true) || text.startsWith("www.facebook.com/", ignoreCase = true)) {
+        text = "https://" + text
+    } else if (text.startsWith("tiktok.com/", ignoreCase = true) || text.startsWith("www.tiktok.com/", ignoreCase = true)) {
+        text = "https://" + text
+    } else if (text.startsWith("x.com/", ignoreCase = true) || text.startsWith("twitter.com/", ignoreCase = true)) {
+        text = "https://" + text
+    }
+
+    return text
+}
+
+/**
+ * Client-Side Immediate URL Syntax & Multi-Platform Provider Detection Helper
  */
 private fun evaluateUrl(
     url: String,
@@ -388,24 +423,46 @@ private fun evaluateUrl(
 ): LinkValidationState {
     if (url.isBlank()) return LinkValidationState.IDLE
 
-    val trimmed = url.trim()
-    val isHttps = trimmed.startsWith("https://", ignoreCase = true)
-    if (!isHttps) return LinkValidationState.INVALID_UNSUPPORTED
+    val normalized = cleanAndNormalizeUrl(url)
+    val lower = normalized.lowercase()
 
     // Reject dangerous schemes or private addresses immediately
-    val lower = trimmed.lowercase()
     if (lower.contains("localhost") || lower.contains("127.0.0.1") || lower.contains("169.254")) {
         return LinkValidationState.INVALID_UNSUPPORTED
     }
 
     return when {
-        lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".jpg") ||
+        lower.contains("instagram.com") || lower.contains("instagr.am") -> {
+            onProviderDetected("Instagram Reel / Post")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        lower.contains("youtube.com") || lower.contains("youtu.be") -> {
+            onProviderDetected("YouTube Video / Short")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        lower.contains("facebook.com") || lower.contains("fb.watch") -> {
+            onProviderDetected("Facebook Video / Reel")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        lower.contains("tiktok.com") -> {
+            onProviderDetected("TikTok Video")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        lower.contains("twitter.com") || lower.contains("x.com") -> {
+            onProviderDetected("X / Twitter Media")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") || lower.endsWith(".jpg") ||
         lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.contains("commondatastorage") -> {
             onProviderDetected("Direct Media")
             LinkValidationState.VALID_DIRECT
         }
-        lower.contains("unsplash.com") || lower.contains("archive.org") || lower.contains("wikimedia.org") -> {
+        lower.contains("unsplash.com") || lower.contains("archive.org") || lower.contains("wikimedia.org") || lower.contains("pexels.com") -> {
             onProviderDetected("Authorized Public Provider")
+            LinkValidationState.VALID_AUTHORIZED
+        }
+        normalized.startsWith("https://") -> {
+            onProviderDetected("Online Video / Media")
             LinkValidationState.VALID_AUTHORIZED
         }
         else -> {

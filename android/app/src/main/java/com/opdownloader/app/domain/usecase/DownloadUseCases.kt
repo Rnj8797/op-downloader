@@ -16,7 +16,22 @@ class ValidateUrlUseCase @Inject constructor() {
             return ValidationResult.Invalid("URL cannot be empty.")
         }
 
-        val trimmed = url.trim()
+        var trimmed = url.trim().trim('\'', '"', '`')
+        if (trimmed.startsWith("reel/", ignoreCase = true) || trimmed.startsWith("/reel/", ignoreCase = true) ||
+            trimmed.startsWith("p/", ignoreCase = true) || trimmed.startsWith("/p/", ignoreCase = true) ||
+            trimmed.startsWith("stories/", ignoreCase = true) || trimmed.startsWith("/stories/", ignoreCase = true)) {
+            trimmed = "https://www.instagram.com/" + trimmed.removePrefix("/")
+        } else if (trimmed.startsWith("instagram.com/", ignoreCase = true) || trimmed.startsWith("www.instagram.com/", ignoreCase = true)) {
+            trimmed = "https://" + trimmed
+        } else if (trimmed.startsWith("youtu.be/", ignoreCase = true) || trimmed.startsWith("youtube.com/", ignoreCase = true) || trimmed.startsWith("www.youtube.com/", ignoreCase = true)) {
+            trimmed = "https://" + trimmed
+        } else if (trimmed.startsWith("facebook.com/", ignoreCase = true) || trimmed.startsWith("fb.watch/", ignoreCase = true) || trimmed.startsWith("www.facebook.com/", ignoreCase = true)) {
+            trimmed = "https://" + trimmed
+        } else if (trimmed.startsWith("tiktok.com/", ignoreCase = true) || trimmed.startsWith("www.tiktok.com/", ignoreCase = true)) {
+            trimmed = "https://" + trimmed
+        } else if (trimmed.startsWith("x.com/", ignoreCase = true) || trimmed.startsWith("twitter.com/", ignoreCase = true)) {
+            trimmed = "https://" + trimmed
+        }
 
         return try {
             val uri = URI(trimmed)

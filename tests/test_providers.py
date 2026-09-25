@@ -38,14 +38,32 @@ async def test_provider_resolution():
     assert unsplash_meta.media_type == "IMAGE"
     print("✓ PublicApiProvider resolution passed.")
 
-    # 4. Rejection of Unsupported URLs
+    # 4. Social Media Provider Resolution (Instagram, YouTube, Facebook)
+    from app.providers.social import SocialMediaProvider
+    instagram_url = "https://www.instagram.com/reel/Ddrqs5Sy8aw/"
+    insta_provider = provider_router.resolve_provider(instagram_url)
+    assert isinstance(insta_provider, SocialMediaProvider)
+    insta_meta = await insta_provider.get_metadata(instagram_url)
+    assert insta_meta.media_type == "VIDEO"
+    assert any(f.format_id == "4k" for f in insta_meta.available_formats)
+    assert any(f.format_id == "1080p" for f in insta_meta.available_formats)
+    assert any(f.format_id == "720p" for f in insta_meta.available_formats)
+    assert any(f.format_id == "audio" for f in insta_meta.available_formats)
+    print("✓ SocialMediaProvider Instagram Reel 4K/1080p/720p/audio extraction passed.")
+
+    youtube_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    yt_provider = provider_router.resolve_provider(youtube_url)
+    assert isinstance(yt_provider, SocialMediaProvider)
+    print("✓ SocialMediaProvider YouTube resolution passed.")
+
+    # 5. Rejection of Unsupported URLs
     try:
         provider_router.resolve_provider("https://unsupported-unknown-site.org/video")
         assert False, "Should have rejected unsupported domain"
     except UnsupportedUrlException:
         print("✓ Unsupported URL correctly rejected with UnsupportedUrlException.")
 
-    # 5. Anti-Circumvention / DRM Rejection
+    # 6. Anti-Circumvention / DRM Rejection
     try:
         provider_router.resolve_provider("https://example.com/stream.mpd?drm=widevine")
         assert False, "Should have rejected DRM content"

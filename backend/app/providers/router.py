@@ -3,6 +3,7 @@ from app.providers.base import BaseMediaProvider, UnsupportedUrlException, DrmPr
 from app.providers.direct import DirectMediaProvider
 from app.providers.open_archive import OpenArchiveProvider
 from app.providers.public_api import PublicApiProvider
+from app.providers.social import SocialMediaProvider
 
 class ProviderRouter:
     """
@@ -12,6 +13,7 @@ class ProviderRouter:
     def __init__(self):
         self.providers: List[BaseMediaProvider] = [
             DirectMediaProvider(),
+            SocialMediaProvider(),
             OpenArchiveProvider(),
             PublicApiProvider()
         ]

@@ -3,7 +3,33 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    
+    <!-- Outer Glowing Hexagon Shield -->
     <path
-        android:fillColor="#6366F1"
-        android:pathData="M30,54 L54,78 L78,54 L66,54 L66,30 L42,30 L42,54 Z" />
+        android:fillColor="#151A28"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2.5"
+        android:pathData="M54,22 L79,36.5 L79,65.5 L54,80 L29,65.5 L29,36.5 Z" />
+
+    <!-- Inner Neon Accent Frame -->
+    <path
+        android:strokeColor="#818CF8"
+        android:strokeWidth="1.2"
+        android:pathData="M54,27 L74,38.5 L74,62.5 L54,74 L34,62.5 L34,38.5 Z" />
+
+    <!-- Lightning Speed Download Arrow -->
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M48,34 L60,34 L60,50 L70,50 L54,69 L38,50 L48,50 Z" />
+
+    <!-- OP Monogram Lettering Accent -->
+    <!-- 'O' Indicator Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,42 A3,3 0 1,1 54,36 A3,3 0 1,1 54,42 Z" />
+
+    <!-- Futuristic Base Speed Glow -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M44,73 L64,73 L61,76 L47,76 Z" />
 </vector>

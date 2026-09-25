@@ -65,6 +65,26 @@ class ValidateUrlUseCaseTest {
     }
 
     @Test
+    fun `cut off instagram reel url is automatically normalized to full https url`() {
+        val result = validateUrlUseCase("'reel/Ddrqs5Sy8aw/?stkn=test'")
+        assertTrue(result is ValidateUrlUseCase.ValidationResult.Valid)
+        assertEquals(
+            "https://www.instagram.com/reel/Ddrqs5Sy8aw/?stkn=test",
+            (result as ValidateUrlUseCase.ValidationResult.Valid).normalizedUrl
+        )
+    }
+
+    @Test
+    fun `youtube url without scheme is normalized`() {
+        val result = validateUrlUseCase("youtu.be/dQw4w9WgXcQ")
+        assertTrue(result is ValidateUrlUseCase.ValidationResult.Valid)
+        assertEquals(
+            "https://youtu.be/dQw4w9WgXcQ",
+            (result as ValidateUrlUseCase.ValidationResult.Valid).normalizedUrl
+        )
+    }
+
+    @Test
     fun `empty or blank urls are rejected`() {
         val emptyResult = validateUrlUseCase("   ")
         assertTrue(emptyResult is ValidateUrlUseCase.ValidationResult.Invalid)

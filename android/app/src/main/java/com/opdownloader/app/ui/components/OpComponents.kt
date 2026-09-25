@@ -116,39 +116,63 @@ fun OpCard(
 @Composable
 fun OpTopBar(
     title: String = "OP Downloader",
-    onSettingsClick: (() -> Unit)? = null
+    onSettingsClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .statusBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Distinct OP Monogram Symbol
+            // Distinct Futuristic OP Downloader Shield Badge
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(AccentGradient),
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFF00F2FE), Color(0xFF4FACFE), Color(0xFF8B5CF6))
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        Color(0xFF00F2FE).copy(alpha = 0.6f),
+                        RoundedCornerShape(12.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "OP",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        color = TextPrimary,
-                        fontSize = 15.sp
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
                     )
-                )
+                    Text(
+                        text = "OP",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            letterSpacing = 0.5.sp
+                        )
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 19.sp
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = TextPrimary
                 )
             )
         }
@@ -157,14 +181,16 @@ fun OpTopBar(
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(SurfaceElevated)
                     .semantics { contentDescription = "Open Settings" }
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Settings,
                     contentDescription = null,
-                    tint = TextSecondary,
-                    modifier = Modifier.size(24.dp)
+                    tint = TextPrimary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }

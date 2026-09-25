@@ -173,7 +173,7 @@ fun PreviewBottomSheet(
 
             // Quality Selection Chips
             Text(
-                text = "Available Qualities:",
+                text = "Select Download Quality:",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
@@ -181,43 +181,100 @@ fun PreviewBottomSheet(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                previewData.availableQualities.forEach { option ->
-                    val isSelected = selectedQualityId == option.id
+            // Video Qualities Grid
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val videoQualities = previewData.availableQualities.filter { it.id != "audio" }
+                val audioOption = previewData.availableQualities.find { it.id == "audio" }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    videoQualities.forEach { option ->
+                        val isSelected = selectedQualityId == option.id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) AccentPrimary.copy(alpha = 0.2f) else SurfaceElevated)
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) AccentPrimary else SurfaceBorder,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable(role = Role.RadioButton) {
+                                    selectedQualityId = option.id
+                                }
+                                .padding(vertical = 10.dp, horizontal = 2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = option.label,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) TextPrimary else TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = option.sizeLabel,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        color = if (isSelected) AccentPrimary else TextTertiary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Audio Extract Option (MP3)
+                if (audioOption != null) {
+                    val isAudioSelected = selectedQualityId == audioOption.id
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) AccentPrimary.copy(alpha = 0.15f) else SurfaceElevated)
+                            .background(if (isAudioSelected) Color(0xFF10B981).copy(alpha = 0.2f) else SurfaceElevated)
                             .border(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) AccentPrimary else SurfaceBorder,
+                                width = if (isAudioSelected) 1.5.dp else 1.dp,
+                                color = if (isAudioSelected) Color(0xFF10B981) else SurfaceBorder,
                                 shape = RoundedCornerShape(10.dp)
                             )
                             .clickable(role = Role.RadioButton) {
-                                selectedQualityId = option.id
+                                selectedQualityId = audioOption.id
                             }
-                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                            .padding(vertical = 10.dp, horizontal = 14.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = option.label,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) TextPrimary else TextSecondary,
-                                    fontSize = 13.sp
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Audiotrack,
+                                    contentDescription = null,
+                                    tint = if (isAudioSelected) Color(0xFF10B981) else TextSecondary,
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = audioOption.label,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = if (isAudioSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isAudioSelected) TextPrimary else TextSecondary
+                                    )
+                                )
+                            }
                             Text(
-                                text = option.sizeLabel,
+                                text = audioOption.sizeLabel,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    color = if (isSelected) AccentPrimary else TextTertiary
+                                    color = if (isAudioSelected) Color(0xFF10B981) else TextTertiary,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             )
                         }

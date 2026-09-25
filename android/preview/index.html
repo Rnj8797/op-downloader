@@ -6,20 +6,20 @@
   <title>OP Downloader - Android UI Simulator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0B0D10;
-      --surface-card: #15181D;
-      --surface-elevated: #1E2229;
-      --surface-border: #282D35;
+      --bg-base: #080C14;
+      --surface-card: #111724;
+      --surface-elevated: #182232;
+      --surface-border: #243046;
       --text-primary: #FFFFFF;
-      --text-secondary: #9CA3AF;
-      --text-tertiary: #6B7280;
+      --text-secondary: #94A3B8;
+      --text-tertiary: #64748B;
       --accent-primary: #6366F1;
-      --accent-secondary: #8B5CF6;
-      --accent-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-      --status-success: #22C55E;
+      --accent-cyan: #06B6D4;
+      --accent-gradient: linear-gradient(135deg, #6366F1 0%, #06B6D4 100%);
+      --status-success: #10B981;
       --status-error: #EF4444;
       --status-warning: #F59E0B;
     }
@@ -33,9 +33,9 @@
     }
 
     body {
-      background: #050608;
+      background: #03060B;
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -47,35 +47,43 @@
     .device-frame {
       width: 100%;
       max-width: 412px;
-      height: 860px;
+      height: 870px;
       background: var(--bg-base);
-      border-radius: 40px;
-      border: 4px solid #232730;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      border-radius: 44px;
+      border: 4px solid #1E293B;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(99, 102, 241, 0.15);
       position: relative;
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
-    /* Android Status Bar */
+    /* Android Status Bar (with safe statusBarsPadding simulation) */
     .status-bar {
-      height: 38px;
-      padding: 0 24px;
+      height: 44px;
+      padding: 10px 24px 0 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-secondary);
       z-index: 10;
+      background: var(--bg-base);
     }
 
-    /* Screen Views */
+    .status-bar-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    /* Screen Views with edge-to-edge padding */
     .screen-content {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 20px 84px 20px;
+      padding: 14px 20px 88px 20px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -89,7 +97,7 @@
     .screen-panel {
       display: none;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
 
     .screen-panel.active {
@@ -102,12 +110,12 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Top Bar Header */
+    /* Top Bar Header with safe status bar padding */
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 0;
+      padding: 4px 0 8px 0;
     }
 
     .logo-group {
@@ -116,33 +124,42 @@
       gap: 12px;
     }
 
-    .op-monogram {
-      width: 36px;
-      height: 36px;
-      background: var(--accent-gradient);
-      border-radius: 10px;
+    /* Brand Logo Shield */
+    .logo-shield {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(6, 182, 212, 0.25));
+      border: 1.5px solid rgba(6, 182, 212, 0.5);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-weight: 900;
-      font-size: 15px;
-      letter-spacing: -0.5px;
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      box-shadow: 0 4px 18px rgba(6, 182, 212, 0.25);
     }
 
     .brand-title {
       font-size: 19px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #FFFFFF 60%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
 
     .icon-btn {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
-      background: transparent;
-      border: none;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
       color: var(--text-secondary);
       display: flex;
       align-items: center;
@@ -152,51 +169,58 @@
     }
 
     .icon-btn:hover {
-      background: var(--surface-card);
+      background: var(--surface-elevated);
       color: var(--text-primary);
+      border-color: var(--accent-primary);
     }
 
     /* Hero Typography */
     .hero-title {
-      font-size: 28px;
-      font-weight: 800;
+      font-size: 26px;
+      font-weight: 900;
       letter-spacing: -0.6px;
       line-height: 1.2;
     }
 
     .hero-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-secondary);
       margin-top: 4px;
-      font-weight: 400;
+      font-weight: 500;
     }
 
     /* Cards */
     .op-card {
       background: var(--surface-card);
       border: 1px solid var(--surface-border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
     /* Input Card */
     .input-label {
       font-size: 12px;
       color: var(--text-secondary);
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .url-input-container {
       display: flex;
       align-items: center;
       background: var(--surface-elevated);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 6px 12px;
       gap: 10px;
+      border: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .url-input-container:focus-within {
+      border-color: var(--accent-cyan);
     }
 
     .url-input {
@@ -214,17 +238,21 @@
     }
 
     .paste-action-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       background: var(--surface-border);
       border: none;
-      color: var(--accent-primary);
+      color: var(--accent-cyan);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.15s;
+      transition: all 0.15s;
+    }
+
+    .paste-action-btn:hover {
+      background: rgba(6, 182, 212, 0.2);
     }
 
     .paste-action-btn:active {
@@ -236,45 +264,47 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 10px;
-      border-radius: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .status-badge.success {
-      background: rgba(34, 197, 94, 0.15);
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
       color: var(--status-success);
     }
 
     .status-badge.error {
       background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
       color: var(--status-error);
     }
 
     /* CTA Button */
     .op-cta-btn {
       width: 100%;
-      min-height: 48px;
+      min-height: 50px;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       background: var(--accent-gradient);
       color: #fff;
       font-family: inherit;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.5px;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+      box-shadow: 0 4px 18px rgba(6, 182, 212, 0.35);
       transition: all 0.2s;
     }
 
     .op-cta-btn:hover {
-      opacity: 0.95;
+      filter: brightness(1.1);
     }
 
     .op-cta-btn:disabled {
@@ -284,6 +314,29 @@
       box-shadow: none;
     }
 
+    /* Supported Platforms Row */
+    .platform-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .platform-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--surface-border);
+      cursor: pointer;
+    }
+
+    .platform-tag:hover {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
     /* Disclaimer Card */
     .disclaimer-card {
       display: flex;
@@ -291,10 +344,11 @@
       gap: 12px;
       background: var(--surface-elevated);
       padding: 12px 14px;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 12px;
       color: var(--text-secondary);
       line-height: 1.4;
+      border: 1px solid rgba(99, 102, 241, 0.15);
     }
 
     /* Recent Item Compact Card */
@@ -310,30 +364,33 @@
       gap: 14px;
       background: var(--surface-card);
       border: 1px solid var(--surface-border);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 12px;
-      transition: background 0.2s;
+      transition: all 0.2s;
       cursor: pointer;
     }
 
     .recent-card:hover {
       background: var(--surface-elevated);
+      border-color: var(--accent-cyan);
     }
 
     .thumb-box {
-      width: 46px;
-      height: 46px;
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: var(--surface-elevated);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--accent-primary);
+      color: var(--accent-cyan);
+      font-weight: 800;
+      flex-shrink: 0;
     }
 
     .item-title {
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
       white-space: nowrap;
       overflow: hidden;
@@ -351,7 +408,7 @@
 
     .item-status-saved {
       color: var(--status-success);
-      font-weight: 600;
+      font-weight: 700;
     }
 
     /* Downloads Screen Components */
@@ -359,27 +416,27 @@
       display: flex;
       background: var(--surface-card);
       border: 1px solid var(--surface-border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 4px;
       gap: 4px;
     }
 
     .tab-pill {
       flex: 1;
-      height: 36px;
+      height: 38px;
       border: none;
       background: transparent;
       color: var(--text-secondary);
       font-family: inherit;
       font-size: 13px;
-      font-weight: 600;
-      border-radius: 8px;
+      font-weight: 700;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .tab-pill.active {
-      background: var(--accent-primary);
+      background: var(--accent-gradient);
       color: #fff;
     }
 
@@ -410,11 +467,11 @@
       height: 40px;
       background: transparent;
       border: 1px solid var(--surface-border);
-      border-radius: 10px;
+      border-radius: 12px;
       color: var(--text-primary);
       font-family: inherit;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -425,6 +482,7 @@
 
     .btn-outline:hover {
       background: var(--surface-elevated);
+      border-color: var(--accent-cyan);
     }
 
     .btn-cancel {
@@ -433,7 +491,7 @@
     }
 
     .btn-cancel:hover {
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.15);
     }
 
     /* Bottom Navigation */
@@ -442,7 +500,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 68px;
+      height: 72px;
       background: var(--surface-card);
       border-top: 1px solid var(--surface-border);
       display: flex;
@@ -461,17 +519,17 @@
       color: var(--text-tertiary);
       font-family: inherit;
       font-size: 11px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       width: 33%;
-      height: 48px;
+      height: 52px;
       justify-content: center;
       transition: color 0.2s;
     }
 
     .nav-item.active {
-      color: var(--accent-primary);
-      font-weight: 700;
+      color: var(--accent-cyan);
+      font-weight: 800;
     }
 
     .nav-item svg {
@@ -487,11 +545,11 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.65);
+      background: rgba(0, 0, 0, 0.75);
       z-index: 50;
       display: none;
       align-items: flex-end;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
     }
 
     .sheet-overlay.active {
@@ -501,14 +559,16 @@
     .bottom-sheet {
       width: 100%;
       background: var(--surface-card);
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      padding: 16px 22px 36px 22px;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      padding: 18px 22px 36px 22px;
       display: flex;
       flex-direction: column;
       gap: 16px;
       border-top: 1px solid var(--surface-border);
       animation: slideUp 0.25s ease-out;
+      max-height: 90%;
+      overflow-y: auto;
     }
 
     @keyframes slideUp {
@@ -517,50 +577,210 @@
     }
 
     .sheet-drag {
-      width: 36px;
-      height: 4px;
+      width: 40px;
+      height: 5px;
       background: var(--surface-border);
-      border-radius: 2px;
+      border-radius: 3px;
       align-self: center;
       margin-bottom: 4px;
     }
 
+    /* 4-Chip Grid for Video Resolutions */
     .quality-chips {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
     }
 
     .quality-chip {
       background: var(--surface-elevated);
-      border: 1px solid var(--surface-border);
-      border-radius: 10px;
-      padding: 10px 4px;
-      text-align: center;
+      border: 1.5px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 10px 12px;
       cursor: pointer;
       transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .quality-chip.selected {
-      border-color: var(--accent-primary);
-      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
+    }
+
+    .chip-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .chip-label {
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--text-primary);
+    }
+
+    .chip-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .quality-chip.selected .chip-tag {
+      background: var(--accent-cyan);
+      color: #000;
     }
 
     .chip-size {
       font-size: 11px;
       color: var(--text-secondary);
-      margin-top: 2px;
     }
 
     .quality-chip.selected .chip-size {
-      color: var(--accent-primary);
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    /* Dedicated Audio Option */
+    .audio-option-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-elevated);
+      border: 1.5px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .audio-option-card.selected {
+      border-color: var(--status-success);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    /* Simple Dialog / Modal for Settings */
+    .dialog-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 60;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog-overlay.active {
+      display: flex;
+    }
+
+    .dialog-box {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: scaleUp 0.2s ease-out;
+    }
+
+    @keyframes scaleUp {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .dialog-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .dialog-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .dialog-radio-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--surface-elevated);
+      border-radius: 10px;
+      font-size: 13px;
       font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .dialog-radio-option:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .dialog-radio-option.selected {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .dialog-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+
+    .dialog-btn-primary {
+      background: var(--accent-gradient);
+      color: #fff;
+    }
+
+    .dialog-btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    /* Toast Notification */
+    .toast-box {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      right: 20px;
+      background: #1E293B;
+      border: 1px solid var(--accent-cyan);
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.2s ease-out;
     }
   </style>
 </head>
@@ -568,10 +788,20 @@
 
   <!-- Android Device Shell -->
   <div class="device-frame">
-    <!-- Status Bar -->
+
+    <!-- Toast Notification -->
+    <div id="toastBox" class="toast-box">
+      <span id="toastMessage">Settings updated</span>
+    </div>
+
+    <!-- Status Bar (Safe statusBarsPadding) -->
     <div class="status-bar">
-      <span>14:20</span>
-      <span>5G  100%</span>
+      <span>12:14</span>
+      <div class="status-bar-icons">
+        <span>VoNR2</span>
+        <span>5G</span>
+        <span>100%</span>
+      </div>
     </div>
 
     <!-- Scrollable Screen Content -->
@@ -581,14 +811,30 @@
       <!-- SCREEN 1: HOME -->
       <!-- ========================================== -->
       <div id="screen-home" class="screen-panel active">
-        <!-- Top App Bar -->
+        <!-- Top App Bar with safe padding & Modern OP Logo -->
         <div class="top-bar">
           <div class="logo-group">
-            <div class="op-monogram">OP</div>
-            <div class="brand-title">OP Downloader</div>
+            <div class="logo-shield">
+              <!-- Futuristic Shield with Glowing Download Arrow -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L4 5V11C4 16.55 7.42 21.74 12 23C16.58 21.74 20 16.55 20 11V5L12 2Z" fill="url(#shieldGrad)" stroke="#06B6D4" stroke-width="1.5"/>
+                <path d="M12 7V15M12 15L9 12M12 15L15 12" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 17H16" stroke="#06B6D4" stroke-width="2" stroke-linecap="round"/>
+                <defs>
+                  <linearGradient id="shieldGrad" x1="4" y1="2" x2="20" y2="23" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#6366F1" stop-opacity="0.8"/>
+                    <stop offset="1" stop-color="#06B6D4" stop-opacity="0.8"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div>
+              <div class="brand-title">OP Downloader</div>
+              <div class="brand-subtitle">PRO EDITION • v1.1</div>
+            </div>
           </div>
           <button class="icon-btn" onclick="showScreen('settings')" title="Settings" aria-label="Settings">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
@@ -598,19 +844,27 @@
         <!-- Headline Hero -->
         <div>
           <h1 class="hero-title">Save your media</h1>
-          <p class="hero-subtitle">Paste a supported link to get started.</p>
+          <p class="hero-subtitle">Instagram, YouTube, Facebook, 4K & MP3 Audio</p>
+        </div>
+
+        <!-- Supported Platforms Row -->
+        <div class="platform-tags">
+          <span class="platform-tag" onclick="pasteSample('instagram')">📸 Instagram Reel</span>
+          <span class="platform-tag" onclick="pasteSample('youtube')">▶ YouTube 4K</span>
+          <span class="platform-tag" onclick="pasteSample('facebook')">👤 Facebook</span>
+          <span class="platform-tag" onclick="pasteSample('cutoff')">⚡ Fix Cut-off Link</span>
         </div>
 
         <!-- Main Input Card with Smart Paste -->
         <div class="op-card">
-          <span class="input-label">Paste your link...</span>
+          <span class="input-label">Paste link (Instagram, YouTube, FB, direct media)...</span>
           <div class="url-input-container">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
             </svg>
-            <input type="text" id="urlInput" class="url-input" placeholder="https://example.com/video.mp4" oninput="validateInput()">
-            <button class="paste-action-btn" id="pasteBtn" onclick="simulateSmartPaste()" title="Smart Paste" aria-label="Paste URL">
+            <input type="text" id="urlInput" class="url-input" placeholder="'reel/Ddrqs5Sy8aw/...' or https://" oninput="validateInput()">
+            <button class="paste-action-btn" id="pasteBtn" onclick="pasteSample('cutoff')" title="Auto-paste user reel link" aria-label="Paste URL">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
@@ -627,22 +881,22 @@
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            DOWNLOAD
+            DOWNLOAD NOW
           </button>
         </div>
 
         <!-- Authorized Source Badge -->
         <div class="disclaimer-card">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
-          <span>Only user-owned content or authorized public media can be saved to device Gallery.</span>
+          <span>Auto-cleans clipped URLs and routes directly to device Gallery.</span>
         </div>
 
         <!-- Recent Downloads -->
         <div class="recent-header">
-          <span style="font-size: 17px; font-weight: 700;">Recent Downloads</span>
-          <span style="font-size: 13px; color: var(--accent-primary); font-weight: 600; cursor: pointer;" onclick="showScreen('downloads')">View All</span>
+          <span style="font-size: 16px; font-weight: 800;">Recent Downloads</span>
+          <span style="font-size: 13px; color: var(--accent-cyan); font-weight: 700; cursor: pointer;" onclick="showScreen('downloads')">View All</span>
         </div>
 
         <div class="recent-card" onclick="showScreen('downloads')">
@@ -652,29 +906,33 @@
             </svg>
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div class="item-title">Sample_Video_01.mp4</div>
+            <div class="item-title">Instagram_Reel_Viral.mp4</div>
             <div class="item-meta">
-              <span>82 MB</span>
+              <span>1080p FHD</span>
               <span>•</span>
-              <span class="item-status-saved">✓ Saved to Gallery</span>
+              <span>34 MB</span>
+              <span>•</span>
+              <span class="item-status-saved">✓ Gallery</span>
             </div>
           </div>
         </div>
 
         <div class="recent-card" onclick="showScreen('downloads')">
-          <div class="thumb-box">
+          <div class="thumb-box" style="color: var(--status-success);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
             </svg>
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div class="item-title">Nature_Photo_04.jpg</div>
+            <div class="item-title">Chill_Beats_LoFi.mp3</div>
             <div class="item-meta">
-              <span>4.2 MB</span>
+              <span>MP3 Audio</span>
               <span>•</span>
-              <span class="item-status-saved">✓ Saved to Gallery</span>
+              <span>6.8 MB</span>
+              <span>•</span>
+              <span class="item-status-saved">✓ Music</span>
             </div>
           </div>
         </div>
@@ -684,41 +942,41 @@
       <!-- SCREEN 2: DOWNLOADS -->
       <!-- ========================================== -->
       <div id="screen-downloads" class="screen-panel">
-        <h1 style="font-size: 24px; font-weight: 800;">Downloads</h1>
+        <h1 style="font-size: 24px; font-weight: 900;">Downloads</h1>
 
         <!-- Filter Tabs -->
         <div class="tab-pills">
           <button class="tab-pill active" onclick="filterTab(this, 'all')">All</button>
           <button class="tab-pill" onclick="filterTab(this, 'videos')">Videos</button>
-          <button class="tab-pill" onclick="filterTab(this, 'photos')">Photos</button>
+          <button class="tab-pill" onclick="filterTab(this, 'audio')">Audio</button>
         </div>
 
         <!-- Active Downloading Card -->
         <div class="op-card" id="activeDownloadCard">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div class="thumb-box" style="background: rgba(99, 102, 241, 0.2);">
+              <div class="thumb-box" style="background: rgba(6, 182, 212, 0.2);">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
               </div>
               <div>
-                <div class="item-title">Video_01.mp4</div>
-                <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;" id="statusText">Downloading...</div>
+                <div class="item-title" id="activeItemTitle">Nature_Doc_4K.mp4</div>
+                <div style="font-size: 12px; color: var(--accent-cyan); font-weight: 700;" id="statusText">Downloading (4K Ultra)...</div>
               </div>
             </div>
-            <span style="font-size: 18px; font-weight: 800; color: var(--accent-primary);" id="pctText">68%</span>
+            <span style="font-size: 18px; font-weight: 900; color: var(--accent-cyan);" id="pctText">74%</span>
           </div>
 
           <!-- Progress Bar -->
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressFill" style="width: 68%;"></div>
+            <div class="progress-bar-fill" id="progressFill" style="width: 74%;"></div>
           </div>
 
           <!-- Metrics -->
           <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
-            <span id="bytesText">1.36 GB / 2.00 GB</span>
-            <span id="speedEtaText">8.4 MB/s • 1:17 remaining</span>
+            <span id="bytesText">133 MB / 180 MB</span>
+            <span id="speedEtaText">14.2 MB/s • 0:04 remaining</span>
           </div>
 
           <!-- Controls -->
@@ -745,18 +1003,18 @@
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <div class="thumb-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
               </div>
               <div>
-                <div class="item-title">Nature_Wallpaper_4K.jpg</div>
+                <div class="item-title">YouTube_4K_HDR_Sample.mp4</div>
                 <div class="item-meta">
-                  <span>4.2 MB</span>
+                  <span>4K 2160p</span>
                   <span>•</span>
-                  <span>Today, 11:30</span>
+                  <span>145 MB</span>
+                  <span>•</span>
+                  <span>Today</span>
                 </div>
               </div>
             </div>
@@ -767,95 +1025,101 @@
         <div class="op-card">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div class="thumb-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              <div class="thumb-box" style="color: var(--status-success);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
                 </svg>
               </div>
               <div>
-                <div class="item-title">Podcast_Episode_12.mp4</div>
+                <div class="item-title">Background_Music.mp3</div>
                 <div class="item-meta">
-                  <span>82 MB</span>
+                  <span>MP3 320kbps</span>
+                  <span>•</span>
+                  <span>8.4 MB</span>
                   <span>•</span>
                   <span>Yesterday</span>
                 </div>
               </div>
             </div>
-            <span class="item-status-saved" style="font-size: 12px;">✓ Gallery</span>
+            <span class="item-status-saved" style="font-size: 12px;">✓ Audio</span>
           </div>
         </div>
       </div>
 
       <!-- ========================================== -->
-      <!-- SCREEN 3: SETTINGS -->
+      <!-- SCREEN 3: SETTINGS (ALL INTERACTIVE) -->
       <!-- ========================================== -->
       <div id="screen-settings" class="screen-panel">
-        <h1 style="font-size: 24px; font-weight: 800;">Settings</h1>
+        <h1 style="font-size: 24px; font-weight: 900;">Settings</h1>
 
-        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">DOWNLOAD</span>
+        <span style="font-size: 12px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 1px;">QUALITY & STORAGE</span>
         <div class="op-card">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openQualityDialog()">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Default Quality</div>
-              <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">Original</div>
+              <div style="font-size: 14px; font-weight: 700;">Default Quality</div>
+              <div style="font-size: 12px; color: var(--accent-cyan); font-weight: 700;" id="settingDefaultQuality">1080p Full HD</div>
             </div>
             <span style="color: var(--text-tertiary); font-size: 13px;">Change ▾</span>
           </div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openFolderDialog()">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Auto-save to Gallery</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Direct MediaStore registration</div>
+              <div style="font-size: 14px; font-weight: 700;">Save Location</div>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="settingSaveFolder">Internal Storage / Movies / OP Downloader</div>
             </div>
-            <input type="checkbox" checked style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+            <span style="color: var(--text-tertiary); font-size: 13px;">Browse ▾</span>
           </div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Wi-Fi Only</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Protect mobile data usage</div>
+              <div style="font-size: 14px; font-weight: 700;">Auto-save to Gallery</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">MediaStore automatic indexing</div>
             </div>
-            <input type="checkbox" style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+            <input type="checkbox" checked id="chkGallery" onchange="showToast('Gallery indexing updated')" style="accent-color: var(--accent-cyan); width: 20px; height: 20px;">
           </div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Concurrent Downloads</div>
-              <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">2 tasks</div>
+              <div style="font-size: 14px; font-weight: 700;">Wi-Fi Only Downloads</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Protect mobile data quota</div>
             </div>
-            <span style="color: var(--text-tertiary); font-size: 13px;">Edit ▾</span>
+            <input type="checkbox" id="chkWifi" onchange="showToast('Wi-Fi constraint updated')" style="accent-color: var(--accent-cyan); width: 20px; height: 20px;">
           </div>
         </div>
 
-        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">SECURITY</span>
+        <span style="font-size: 12px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 1px;">SECURITY & SYSTEM</span>
         <div class="op-card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Biometric App Lock</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Require fingerprint or PIN</div>
+              <div style="font-size: 14px; font-weight: 700;">Biometric App Lock</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Fingerprint / Face unlock prompt</div>
             </div>
-            <input type="checkbox" style="accent-color: var(--accent-primary); width: 18px; height: 18px;">
+            <input type="checkbox" id="chkBiometric" onchange="showToast('Biometric lock preference saved')" style="accent-color: var(--accent-cyan); width: 20px; height: 20px;">
           </div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
-          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="alert('Temporary cache files cleared.')">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="clearAppCache()">
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Clear Temporary Files</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Purge transient scratch buffer</div>
+              <div style="font-size: 14px; font-weight: 700;">Clear Temporary Cache</div>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="cacheSizeText">Purge scratch storage (42.6 MB)</div>
             </div>
-            <span style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">Clear</span>
+            <span style="font-size: 12px; color: var(--status-error); font-weight: 800;">Clear</span>
           </div>
         </div>
 
-        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary); letter-spacing: 1px;">ABOUT</span>
+        <span style="font-size: 12px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 1px;">ABOUT & LEGAL</span>
         <div class="op-card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 14px; font-weight: 600;">Version</span>
-            <span style="font-size: 13px; color: var(--text-secondary);">1.0.0</span>
+            <span style="font-size: 14px; font-weight: 700;">Version</span>
+            <span style="font-size: 13px; color: var(--accent-cyan); font-weight: 800;">1.1.0 PRO</span>
           </div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
-          <div style="font-size: 14px; font-weight: 600; cursor: pointer;">Privacy Policy</div>
+          <div style="font-size: 14px; font-weight: 700; cursor: pointer;" onclick="openLegalModal('privacy')">Privacy Policy</div>
           <hr style="border: 0; border-top: 1px solid var(--surface-border);">
-          <div style="font-size: 14px; font-weight: 600; cursor: pointer;">Terms of Service</div>
+          <div style="font-size: 14px; font-weight: 700; cursor: pointer;" onclick="openLegalModal('terms')">Terms of Service</div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border);">
+          <div style="font-size: 14px; font-weight: 700; cursor: pointer;" onclick="openLegalModal('licenses')">Open-Source Licenses</div>
         </div>
       </div>
 
@@ -877,47 +1141,76 @@
       </button>
     </nav>
 
-    <!-- Preview Modal Bottom Sheet -->
+    <!-- Preview Modal Bottom Sheet with 4K, 1080p, 720p, 480p and Audio -->
     <div class="sheet-overlay" id="previewSheet" onclick="closeSheetOnOverlay(event)">
       <div class="bottom-sheet">
         <div class="sheet-drag"></div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 18px; font-weight: 700;">Preview</span>
+          <span style="font-size: 18px; font-weight: 800;">Download Options</span>
           <button class="icon-btn" style="width: 32px; height: 32px;" onclick="closePreviewSheet()">✕</button>
         </div>
 
-        <div style="height: 140px; background: var(--surface-elevated); border: 1px solid var(--surface-border); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent-primary)">
+        <div style="height: 130px; background: var(--surface-elevated); border: 1px solid var(--surface-border); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="var(--accent-cyan)">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Direct Public Media</span>
-          <span style="position: absolute; bottom: 8px; right: 10px; background: rgba(0,0,0,0.8); font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">02:31</span>
+          <span style="font-size: 12px; color: var(--accent-cyan); font-weight: 700; margin-top: 6px;" id="sheetPlatformBadge">Instagram Reel Detected</span>
+          <span style="position: absolute; bottom: 8px; right: 10px; background: rgba(0,0,0,0.85); font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">00:45</span>
         </div>
 
         <div>
-          <div style="font-size: 15px; font-weight: 700;">Authorized Sample Stream</div>
-          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Video • 02:31 • 82 MB</div>
+          <div style="font-size: 15px; font-weight: 800;" id="sheetTitle">Instagram Reel - HD Video</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Direct MP4 • Gallery Ready</div>
         </div>
 
         <div>
-          <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Available Qualities:</div>
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Select Video Quality:</div>
           <div class="quality-chips">
-            <div class="quality-chip selected" onclick="selectChip(this)">
-              <div class="chip-label">Original</div>
-              <div class="chip-size">82 MB</div>
+            <div class="quality-chip" id="chip-4k" onclick="selectQuality('4K (2160p)', '180 MB', this)">
+              <div class="chip-badge-row">
+                <span class="chip-label">4K Ultra</span>
+                <span class="chip-tag">2160p</span>
+              </div>
+              <div class="chip-size">~180 MB</div>
             </div>
-            <div class="quality-chip" onclick="selectChip(this)">
-              <div class="chip-label">1080p</div>
-              <div class="chip-size">54 MB</div>
+            <div class="quality-chip selected" id="chip-1080p" onclick="selectQuality('1080p FHD', '85 MB', this)">
+              <div class="chip-badge-row">
+                <span class="chip-label">1080p FHD</span>
+                <span class="chip-tag">HD</span>
+              </div>
+              <div class="chip-size">~85 MB</div>
             </div>
-            <div class="quality-chip" onclick="selectChip(this)">
-              <div class="chip-label">720p</div>
-              <div class="chip-size">31 MB</div>
+            <div class="quality-chip" id="chip-720p" onclick="selectQuality('720p HD', '42 MB', this)">
+              <div class="chip-badge-row">
+                <span class="chip-label">720p HD</span>
+                <span class="chip-tag">Fast</span>
+              </div>
+              <div class="chip-size">~42 MB</div>
             </div>
-            <div class="quality-chip" onclick="selectChip(this)">
-              <div class="chip-label">480p</div>
-              <div class="chip-size">18 MB</div>
+            <div class="quality-chip" id="chip-480p" onclick="selectQuality('480p SD', '20 MB', this)">
+              <div class="chip-badge-row">
+                <span class="chip-label">480p SD</span>
+                <span class="chip-tag">Lite</span>
+              </div>
+              <div class="chip-size">~20 MB</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Extract Audio Row -->
+        <div>
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Or Audio Only:</div>
+          <div class="audio-option-card" id="chip-audio" onclick="selectAudioQuality(this)">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); color: var(--status-success); display: flex; align-items: center; justify-content: center;">
+                🎵
+              </div>
+              <div>
+                <div style="font-size: 13px; font-weight: 700;">Extract MP3 Audio</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">Crystal clear 128 kbps stereo audio</div>
+              </div>
+            </div>
+            <span style="font-size: 12px; font-weight: 800; color: var(--status-success);">~4.5 MB</span>
           </div>
         </div>
 
@@ -926,9 +1219,28 @@
         </button>
       </div>
     </div>
+
+    <!-- General Dialog Modal -->
+    <div class="dialog-overlay" id="generalDialog">
+      <div class="dialog-box">
+        <div class="dialog-title" id="dialogTitle">Default Quality</div>
+        <div class="dialog-body" id="dialogBody">
+          <!-- Dynamic options filled via JS -->
+        </div>
+        <div class="dialog-actions">
+          <button class="dialog-btn dialog-btn-ghost" onclick="closeDialog()">Close</button>
+          <button class="dialog-btn dialog-btn-primary" id="dialogActionBtn" onclick="closeDialog()">OK</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
+    let selectedQualityName = '1080p FHD';
+    let selectedQualitySize = '85 MB';
+    let isAudioSelected = false;
+
     function showScreen(screenId) {
       document.querySelectorAll('.screen-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -937,30 +1249,83 @@
       document.getElementById('nav-' + screenId).classList.add('active');
     }
 
-    function simulateSmartPaste() {
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMessage').innerText = msg;
+      box.style.display = 'flex';
+      setTimeout(() => {
+        box.style.display = 'none';
+      }, 2500);
+    }
+
+    function cleanAndNormalizeUrl(raw) {
+      if (!raw) return '';
+      let url = raw.trim();
+      // Remove surrounding quotes or backticks
+      url = url.replace(/^['"`\s]+|['"`\s]+$/g, '');
+
+      // Fix cut-off reel links (e.g. 'reel/Ddrqs5Sy8aw/?stkn=...')
+      if (url.startsWith('reel/') || url.startsWith('/reel/')) {
+        url = 'https://www.instagram.com/' + url.replace(/^\/+/, '');
+      } else if (url.startsWith('p/') || url.startsWith('/p/')) {
+        url = 'https://www.instagram.com/' + url.replace(/^\/+/, '');
+      } else if (url.startsWith('watch?') || url.startsWith('shorts/')) {
+        url = 'https://www.youtube.com/' + url;
+      } else if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      return url;
+    }
+
+    function pasteSample(type) {
       const input = document.getElementById('urlInput');
-      input.value = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      if (type === 'cutoff') {
+        input.value = "'reel/Ddrqs5Sy8aw/?stkn=E7z358BwT7s&igsh=MWhsd2hqaHVhOTk4YQ=='";
+      } else if (type === 'instagram') {
+        input.value = "https://www.instagram.com/reel/Ddrqs5Sy8aw/";
+      } else if (type === 'youtube') {
+        input.value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      } else if (type === 'facebook') {
+        input.value = "https://www.facebook.com/watch/?v=10153231379946729";
+      }
       validateInput();
     }
 
     function validateInput() {
-      const val = document.getElementById('urlInput').value.trim();
+      const raw = document.getElementById('urlInput').value.trim();
       const badge = document.getElementById('validationBadge');
       const cta = document.getElementById('downloadCta');
 
-      if (!val) {
+      if (!raw) {
         badge.style.display = 'none';
         cta.disabled = true;
         return;
       }
 
-      if (val.startsWith('https://') && (val.includes('.mp4') || val.includes('commondatastorage') || val.includes('unsplash') || val.includes('archive.org'))) {
+      const normalized = cleanAndNormalizeUrl(raw);
+
+      let platformName = '';
+      if (normalized.includes('instagram.com/reel') || normalized.includes('instagram.com/p/')) {
+        platformName = 'Instagram Reel';
+      } else if (normalized.includes('youtube.com') || normalized.includes('youtu.be')) {
+        platformName = 'YouTube Video / Short';
+      } else if (normalized.includes('facebook.com') || normalized.includes('fb.watch')) {
+        platformName = 'Facebook Video';
+      } else if (normalized.includes('tiktok.com')) {
+        platformName = 'TikTok Video';
+      } else if (normalized.includes('.mp4') || normalized.includes('archive.org') || normalized.includes('unsplash')) {
+        platformName = 'Direct Media (MP4)';
+      }
+
+      if (platformName) {
         badge.style.display = 'block';
-        badge.innerHTML = '<span class="status-badge success">✓ Link detected: Direct Media</span>';
+        badge.innerHTML = `<span class="status-badge success">✓ Link detected: ${platformName}</span>`;
         cta.disabled = false;
+        document.getElementById('sheetPlatformBadge').innerText = `${platformName} Verified`;
+        document.getElementById('sheetTitle').innerText = `${platformName} Download Options`;
       } else {
         badge.style.display = 'block';
-        badge.innerHTML = '<span class="status-badge error">✕ This link isn\'t supported.</span>';
+        badge.innerHTML = '<span class="status-badge error">✕ Please provide a valid Instagram, YouTube, FB or MP4 link</span>';
         cta.disabled = true;
       }
     }
@@ -979,14 +1344,31 @@
       }
     }
 
-    function selectChip(el) {
+    function selectQuality(name, size, el) {
+      isAudioSelected = false;
+      document.querySelectorAll('.quality-chip').forEach(c => c.classList.remove('selected'));
+      document.getElementById('chip-audio').classList.remove('selected');
+      el.classList.add('selected');
+      selectedQualityName = name;
+      selectedQualitySize = size;
+    }
+
+    function selectAudioQuality(el) {
+      isAudioSelected = true;
       document.querySelectorAll('.quality-chip').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
+      selectedQualityName = 'MP3 Audio (128 kbps)';
+      selectedQualitySize = '4.5 MB';
     }
 
     function startDownloadFromSheet() {
       closePreviewSheet();
+      const title = isAudioSelected ? 'Audio_Track.mp3' : 'Media_Download.mp4';
+      document.getElementById('activeItemTitle').innerText = title;
+      document.getElementById('statusText').innerText = `Downloading (${selectedQualityName})...`;
+      document.getElementById('bytesText').innerText = `12 MB / ${selectedQualitySize}`;
       showScreen('downloads');
+      showToast(`Downloading in ${selectedQualityName}`);
     }
 
     let isPaused = false;
@@ -1000,18 +1382,84 @@
         status.style.color = 'var(--status-warning)';
       } else {
         btn.innerHTML = '❚❚ PAUSE';
-        status.innerText = 'Downloading...';
-        status.style.color = 'var(--accent-primary)';
+        status.innerText = `Downloading (${selectedQualityName})...`;
+        status.style.color = 'var(--accent-cyan)';
       }
     }
 
     function cancelDownload() {
       document.getElementById('activeDownloadCard').style.display = 'none';
+      showToast('Download cancelled');
     }
 
     function filterTab(el, type) {
       document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
+    }
+
+    /* Interactive Settings Dialogs */
+    function openQualityDialog() {
+      document.getElementById('dialogTitle').innerText = 'Select Default Quality';
+      const qualities = ['4K Ultra (2160p)', '1080p FHD (1080p)', '720p HD (720p)', '480p SD (480p)', 'Ask every time'];
+      let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+      qualities.forEach(q => {
+        html += `<div class="dialog-radio-option" onclick="setDefaultQuality('${q}')">${q}</div>`;
+      });
+      html += '</div>';
+      document.getElementById('dialogBody').innerHTML = html;
+      document.getElementById('generalDialog').classList.add('active');
+    }
+
+    function setDefaultQuality(q) {
+      document.getElementById('settingDefaultQuality').innerText = q;
+      closeDialog();
+      showToast(`Default quality set to ${q}`);
+    }
+
+    function openFolderDialog() {
+      document.getElementById('dialogTitle').innerText = 'Choose Storage Folder';
+      const folders = [
+        'Internal Storage / Movies / OP Downloader',
+        'Internal Storage / Download',
+        'SD Card / Media / Downloads'
+      ];
+      let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+      folders.forEach(f => {
+        html += `<div class="dialog-radio-option" onclick="setSaveFolder('${f}')">${f}</div>`;
+      });
+      html += '</div>';
+      document.getElementById('dialogBody').innerHTML = html;
+      document.getElementById('generalDialog').classList.add('active');
+    }
+
+    function setSaveFolder(f) {
+      document.getElementById('settingSaveFolder').innerText = f;
+      closeDialog();
+      showToast('Download folder updated');
+    }
+
+    function clearAppCache() {
+      document.getElementById('cacheSizeText').innerText = 'Purge scratch storage (0.0 MB)';
+      showToast('Temporary cache and buffers cleared successfully!');
+    }
+
+    function openLegalModal(type) {
+      const modal = document.getElementById('generalDialog');
+      if (type === 'privacy') {
+        document.getElementById('dialogTitle').innerText = 'Privacy Policy';
+        document.getElementById('dialogBody').innerHTML = '<p>OP Downloader operates strictly on-device without external data tracking. Downloads are piped directly to your local Scoped MediaStore storage without telemetry.</p>';
+      } else if (type === 'terms') {
+        document.getElementById('dialogTitle').innerText = 'Terms of Service';
+        document.getElementById('dialogBody').innerHTML = '<p>Users are responsible for ensuring they possess rights to save media. Downloading copyright-restricted DRM content is strictly disallowed under platform guidelines.</p>';
+      } else if (type === 'licenses') {
+        document.getElementById('dialogTitle').innerText = 'Open-Source Licenses';
+        document.getElementById('dialogBody').innerHTML = '<p>Built with Jetpack Compose, Kotlin Coroutines, OkHttp, and AndroidX Media3 under Apache 2.0 license.</p>';
+      }
+      modal.classList.add('active');
+    }
+
+    function closeDialog() {
+      document.getElementById('generalDialog').classList.remove('active');
     }
   </script>
 </body>
