@@ -35,7 +35,8 @@ class MediaStoreHelper @Inject constructor(
         tempFile: File,
         filename: String,
         mimeType: String,
-        isVideo: Boolean
+        isVideo: Boolean,
+        isAudio: Boolean = false
     ): Uri? {
         val resolver = context.contentResolver
         val contentValues = ContentValues().apply {
@@ -43,10 +44,10 @@ class MediaStoreHelper @Inject constructor(
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val relativePath = if (isVideo) {
-                    "${Environment.DIRECTORY_MOVIES}/$DIRECTORY_NAME"
-                } else {
-                    "${Environment.DIRECTORY_PICTURES}/$DIRECTORY_NAME"
+                val relativePath = when {
+                    isAudio -> "${Environment.DIRECTORY_MUSIC}/$DIRECTORY_NAME"
+                    isVideo -> "${Environment.DIRECTORY_MOVIES}/$DIRECTORY_NAME"
+                    else -> "${Environment.DIRECTORY_PICTURES}/$DIRECTORY_NAME"
                 }
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 // Mark pending during write so other apps don't access half-written file
@@ -54,17 +55,27 @@ class MediaStoreHelper @Inject constructor(
             }
         }
 
-        val targetCollection: Uri = if (isVideo) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            } else {
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val targetCollection: Uri = when {
+            isAudio -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                } else {
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                }
             }
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            } else {
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            isVideo -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                } else {
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                }
+            }
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                } else {
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                }
             }
         }
 

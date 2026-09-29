@@ -51,9 +51,11 @@ fun PreviewBottomSheet(
     modifier: Modifier = Modifier
 ) {
     var selectedQualityId by remember { mutableStateOf(previewData.availableQualities.firstOrNull()?.id ?: "original") }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = SurfaceCard,
         contentColor = TextPrimary,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),

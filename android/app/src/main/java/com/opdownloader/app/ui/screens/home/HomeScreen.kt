@@ -57,11 +57,13 @@ fun HomeScreen(
     onNavigateToDownloads: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onShowPreview: (url: String) -> Unit,
+    onStartDownload: (url: String, quality: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var urlText by remember { mutableStateOf("") }
     var validationState by remember { mutableStateOf(LinkValidationState.IDLE) }
     var detectedProviderName by remember { mutableStateOf("") }
+    var selectedQuality by remember { mutableStateOf("1080p") }
     val clipboardManager = LocalClipboardManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -231,19 +233,159 @@ fun HomeScreen(
                         }
                     }
 
+                    // Quality Selection Chips (Visible when link is valid)
+                    val isValid = validationState == LinkValidationState.VALID_DIRECT ||
+                                  validationState == LinkValidationState.VALID_AUTHORIZED
+
+                    AnimatedVisibility(visible = isValid) {
+                        Column(modifier = Modifier.padding(top = 16.dp)) {
+                            Text(
+                                text = "Select Quality / Format:",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = TextSecondary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Video qualities
+                            val options = listOf(
+                                "4k" to "4K Ultra",
+                                "1080p" to "1080p FHD",
+                                "720p" to "720p HD",
+                                "480p" to "480p SD",
+                                "audio" to "MP3 Audio"
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                options.take(4).forEach { (id, label) ->
+                                    val isSelected = selectedQuality == id
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isSelected) AccentPrimary.copy(alpha = 0.25f) else SurfaceElevated)
+                                            .border(
+                                                width = if (isSelected) 1.5.dp else 1.dp,
+                                                color = if (isSelected) AccentPrimary else SurfaceBorder,
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .clickable { selectedQuality = id }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = id.uppercase(),
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) TextPrimary else TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // MP3 Audio Row
+                            val isAudioSelected = selectedQuality == "audio"
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isAudioSelected) androidx.compose.ui.graphics.Color(0xFF10B981).copy(alpha = 0.2f) else SurfaceElevated)
+                                    .border(
+                                        width = if (isAudioSelected) 1.5.dp else 1.dp,
+                                        color = if (isAudioSelected) androidx.compose.ui.graphics.Color(0xFF10B981) else SurfaceBorder,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { selectedQuality = "audio" }
+                                    .padding(vertical = 7.dp, horizontal = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Audiotrack,
+                                            contentDescription = null,
+                                            tint = if (isAudioSelected) androidx.compose.ui.graphics.Color(0xFF10B981) else TextSecondary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Extract MP3 Audio",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = if (isAudioSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isAudioSelected) TextPrimary else TextSecondary
+                                            )
+                                        )
+                                    }
+                                    Text(
+                                        text = "320 kbps",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = if (isAudioSelected) androidx.compose.ui.graphics.Color(0xFF10B981) else TextTertiary,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Primary Action CTA: DOWNLOAD
+                    // Primary Action CTA: DIRECT DOWNLOAD
+                    val btnLabel = if (selectedQuality == "audio") "DOWNLOAD MP3 AUDIO" else "DOWNLOAD ${selectedQuality.uppercase()}"
                     OpButton(
-                        text = "DOWNLOAD",
-                        enabled = validationState == LinkValidationState.VALID_DIRECT ||
-                                  validationState == LinkValidationState.VALID_AUTHORIZED,
+                        text = btnLabel,
+                        enabled = isValid,
                         icon = Icons.Default.FileDownload,
                         onClick = {
                             keyboardController?.hide()
-                            onShowPreview(urlText)
+                            val cleaned = cleanAndNormalizeUrl(urlText)
+                            onStartDownload(cleaned, selectedQuality)
                         }
                     )
+
+                    // Secondary Preview Button
+                    if (isValid) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    keyboardController?.hide()
+                                    val cleaned = cleanAndNormalizeUrl(urlText)
+                                    onShowPreview(cleaned)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = AccentPrimary,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Preview Details & Thumbnail",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = AccentPrimary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

@@ -41,11 +41,44 @@ fun OpNavGraph(
                 .fillMaxSize()
                 .padding(paddingValues)
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+
             when (currentScreen) {
                 "home" -> HomeScreen(
                     onNavigateToDownloads = { currentScreen = "downloads" },
                     onNavigateToSettings = { currentScreen = "settings" },
                     onShowPreview = { url -> activePreviewUrl = url },
+                    onStartDownload = { url, quality ->
+                        val lower = url.lowercase()
+                        val isImage = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")
+                        val platformName = when {
+                            lower.contains("instagram.com") || lower.contains("instagr.am") -> "Instagram Reel"
+                            lower.contains("youtube.com") || lower.contains("youtu.be") -> "YouTube Video"
+                            lower.contains("facebook.com") || lower.contains("fb.watch") -> "Facebook Reel"
+                            lower.contains("tiktok.com") -> "TikTok Video"
+                            lower.contains("twitter.com") || lower.contains("x.com") -> "X Video"
+                            else -> "Media Download"
+                        }
+                        val sizeText = when (quality) {
+                            "4k" -> "184 MB"
+                            "1080p" -> "68 MB"
+                            "720p" -> "35 MB"
+                            "480p" -> "18 MB"
+                            "audio" -> "6.4 MB"
+                            else -> "50 MB"
+                        }
+
+                        com.opdownloader.app.data.DownloadStateManager.startDownload(
+                            context = context,
+                            url = url,
+                            qualityId = quality,
+                            platformTitle = platformName,
+                            isVideo = !isImage && quality != "audio",
+                            sizeText = sizeText
+                        )
+                        // Immediately navigate to downloads tab so the user sees live progress
+                        currentScreen = "downloads"
+                    },
                     modifier = screenModifier
                 )
                 "downloads" -> DownloadsScreen(
