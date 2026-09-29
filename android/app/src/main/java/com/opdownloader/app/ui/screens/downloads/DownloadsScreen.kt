@@ -45,7 +45,8 @@ data class DownloadTask(
     val totalBytesText: String,
     val speedText: String? = null,
     val etaText: String? = null,
-    val dateText: String
+    val dateText: String,
+    val mediaUri: String? = null
 )
 
 @Composable
@@ -54,6 +55,7 @@ fun DownloadsScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(DownloadTab.ALL) }
+    var activePlayingTask by remember { mutableStateOf<DownloadTask?>(null) }
 
     val tasks = com.opdownloader.app.data.DownloadStateManager.tasks
 
@@ -148,6 +150,7 @@ fun DownloadsScreen(
                         } else {
                             CompletedDownloadCard(
                                 task = task,
+                                onPlay = { activePlayingTask = task },
                                 onDeleteHistory = {
                                     com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
                                 }
@@ -158,6 +161,16 @@ fun DownloadsScreen(
                     item { Spacer(modifier = Modifier.height(30.dp)) }
                 }
             }
+        }
+
+        // In-App Media Player Dialog
+        activePlayingTask?.let { task ->
+            OpMediaPlayerDialog(
+                mediaUriString = task.mediaUri,
+                filename = task.filename,
+                isVideo = task.isVideo,
+                onDismiss = { activePlayingTask = null }
+            )
         }
     }
 }
@@ -301,12 +314,14 @@ fun ActiveDownloadCard(
 @Composable
 fun CompletedDownloadCard(
     task: DownloadTask,
+    onPlay: () -> Unit,
     onDeleteHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
 
-    OpCard(modifier = modifier) {
+    OpCard(modifier = modifier.clickable { onPlay() }) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -315,14 +330,15 @@ fun CompletedDownloadCard(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(SurfaceElevated),
+                    .background(AccentPrimary.copy(alpha = 0.15f))
+                    .clickable { onPlay() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (task.isVideo) Icons.Default.Movie else Icons.Default.Image,
-                    contentDescription = null,
-                    tint = TextSecondary,
-                    modifier = Modifier.size(24.dp)
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play",
+                    tint = AccentPrimary,
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
@@ -357,6 +373,21 @@ fun CompletedDownloadCard(
                 )
             }
 
+            // Quick Play Button
+            Button(
+                onClick = onPlay,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentPrimary),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.height(34.dp)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(3.dp))
+                Text("PLAY", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
             // More Options Menu
             Box {
                 IconButton(
@@ -376,14 +407,28 @@ fun CompletedDownloadCard(
                     modifier = Modifier.background(SurfaceElevated)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Open in Gallery", color = TextPrimary) },
+                        text = { Text("Play in App", color = TextPrimary) },
+                        leadingIcon = { Icon(Icons.Default.PlayCircle, contentDescription = null, tint = AccentPrimary) },
+                        onClick = {
+                            showMenu = false
+                            onPlay()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Open in Phone Gallery", color = TextPrimary) },
                         leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = TextPrimary) },
-                        onClick = { showMenu = false }
+                        onClick = {
+                            showMenu = false
+                            openInSystemGallery(context, task.mediaUri?.let { android.net.Uri.parse(it) }, task.isVideo)
+                        }
                     )
                     DropdownMenuItem(
                         text = { Text("Share", color = TextPrimary) },
                         leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = TextPrimary) },
-                        onClick = { showMenu = false }
+                        onClick = {
+                            showMenu = false
+                            shareSystemMedia(context, task.mediaUri?.let { android.net.Uri.parse(it) }, task.isVideo)
+                        }
                     )
                     Divider(color = SurfaceBorder)
                     DropdownMenuItem(

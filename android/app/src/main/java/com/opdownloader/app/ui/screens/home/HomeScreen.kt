@@ -41,7 +41,8 @@ data class RecentDownloadItem(
     val sizeText: String,
     val isVideo: Boolean,
     val dateText: String,
-    val statusText: String = "✓ Saved to Gallery"
+    val statusText: String = "✓ Saved to Gallery",
+    val mediaUri: String? = null
 )
 
 enum class LinkValidationState {
@@ -64,6 +65,7 @@ fun HomeScreen(
     var validationState by remember { mutableStateOf(LinkValidationState.IDLE) }
     var detectedProviderName by remember { mutableStateOf("") }
     var selectedQuality by remember { mutableStateOf("1080p") }
+    var activePlayingItem by remember { mutableStateOf<RecentDownloadItem?>(null) }
     val clipboardManager = LocalClipboardManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -462,13 +464,26 @@ fun HomeScreen(
                 }
             } else {
                 items(recentItems, key = { it.id }) { item ->
-                    RecentDownloadCard(item = item)
+                    RecentDownloadCard(
+                        item = item,
+                        onPlayClick = { activePlayingItem = item }
+                    )
                 }
             }
 
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+
+        // In-App Media Player Dialog
+        activePlayingItem?.let { item ->
+            OpMediaPlayerDialog(
+                mediaUriString = item.mediaUri,
+                filename = item.filename,
+                isVideo = item.isVideo,
+                onDismiss = { activePlayingItem = null }
+            )
         }
     }
 }
@@ -479,6 +494,7 @@ fun HomeScreen(
 @Composable
 fun RecentDownloadCard(
     item: RecentDownloadItem,
+    onPlayClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -487,6 +503,7 @@ fun RecentDownloadCard(
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceCard)
             .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
+            .clickable { onPlayClick() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -536,6 +553,22 @@ fun RecentDownloadCard(
                     )
                 )
             }
+        }
+
+        // Quick Play Icon Button
+        IconButton(
+            onClick = onPlayClick,
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(AccentPrimary.copy(alpha = 0.2f))
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Play Video in App",
+                tint = AccentPrimary,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

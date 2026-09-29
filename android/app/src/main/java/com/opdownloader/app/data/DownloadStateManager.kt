@@ -1,6 +1,7 @@
 package com.opdownloader.app.data
 
 import android.content.Context
+import android.os.Environment
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import com.opdownloader.app.data.mediastore.MediaStoreHelper
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit
  * Global reactive download state manager for OP Downloader.
  * Resolves social media video streams (Instagram, YouTube, Facebook, Twitter, TikTok),
  * streams real playable media to device, provides live progress,
- * and saves valid MP4/MP3 files directly to Android Gallery (Movies/Music/OP Downloader).
+ * and saves valid MP4/MP3 files directly to Android Gallery (DCIM/Camera and Movies/OP Downloader).
  */
 object DownloadStateManager {
 
@@ -44,6 +45,50 @@ object DownloadStateManager {
     private const val FALLBACK_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
     private const val FALLBACK_AUDIO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
     private const val FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80"
+
+    init {
+        // Automatically discover existing downloaded media on device startup
+        scope.launch(Dispatchers.IO) {
+            try {
+                val moviesDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "OP Downloader")
+                val dcimCameraDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera")
+                val discovered = mutableListOf<File>()
+
+                if (moviesDir.exists()) {
+                    moviesDir.listFiles()?.filter {
+                        it.isFile && !it.name.startsWith(".") && (it.name.endsWith(".mp4") || it.name.endsWith(".mp3"))
+                    }?.let { discovered.addAll(it) }
+                }
+
+                for (file in discovered) {
+                    // Copy to DCIM/Camera so Vivo Gallery / Google Photos shows it in primary feed
+                    try {
+                        val dcimTarget = File(dcimCameraDir, file.name)
+                        if (!dcimTarget.exists()) {
+                            file.copyTo(dcimTarget, overwrite = true)
+                        }
+                    } catch (_: Exception) {}
+
+                    withContext(Dispatchers.Main) {
+                        if (recentDownloads.none { it.filename == file.name }) {
+                            val sizeMb = String.format("%.1f MB", file.length() / (1024f * 1024f))
+                            recentDownloads.add(
+                                RecentDownloadItem(
+                                    id = file.name,
+                                    filename = file.name,
+                                    sizeText = sizeMb,
+                                    isVideo = file.name.endsWith(".mp4"),
+                                    dateText = "Saved",
+                                    statusText = "✓ Saved to Gallery",
+                                    mediaUri = file.absolutePath
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
 
     /**
      * Enqueue and begin downloading a media item
@@ -193,7 +238,7 @@ object DownloadStateManager {
 
     /**
      * Streams real bytes, writes to temporary file, delivers live progress updates,
-     * and commits the valid file to MediaStore (Movies/Music/OP Downloader).
+     * and commits the valid file to MediaStore and local sandbox for instant playback.
      */
     private suspend fun performLiveStreamDownload(
         context: Context,
@@ -262,7 +307,8 @@ object DownloadStateManager {
                 isVideo -> "video/mp4"
                 else -> "image/jpeg"
             }
-            mediaStore.saveMediaToGallery(
+
+            val savedUri = mediaStore.saveMediaToGallery(
                 tempFile = tempFile,
                 filename = filename,
                 mimeType = mime,
@@ -270,7 +316,15 @@ object DownloadStateManager {
                 isAudio = isAudio
             )
 
-            completeDownload(context, taskId, filename, sizeText, isVideo)
+            // Keep local persistent copy for instant In-App Video Player
+            val persistentFile = File(context.filesDir, filename)
+            try {
+                tempFile.copyTo(persistentFile, overwrite = true)
+            } catch (_: Exception) {}
+
+            val finalUriString = savedUri?.toString() ?: persistentFile.absolutePath
+
+            completeDownload(context, taskId, filename, sizeText, isVideo, finalUriString)
         }
     }
 
@@ -279,7 +333,8 @@ object DownloadStateManager {
         taskId: String,
         filename: String,
         sizeText: String,
-        isVideo: Boolean
+        isVideo: Boolean,
+        mediaUri: String? = null
     ) {
         withContext(Dispatchers.Main) {
             val index = tasks.indexOfFirst { it.id == taskId }
@@ -290,7 +345,8 @@ object DownloadStateManager {
                     downloadedBytesText = sizeText,
                     speedText = null,
                     etaText = null,
-                    dateText = "Just now"
+                    dateText = "Just now",
+                    mediaUri = mediaUri
                 )
             }
 
@@ -303,11 +359,12 @@ object DownloadStateManager {
                     sizeText = sizeText,
                     isVideo = isVideo,
                     dateText = "Just now",
-                    statusText = "✓ Saved to Gallery"
+                    statusText = "✓ Saved to Gallery",
+                    mediaUri = mediaUri
                 )
             )
 
-            Toast.makeText(context, "✓ Download Complete: Saved to Gallery", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "✓ Saved to Gallery: $filename", Toast.LENGTH_SHORT).show()
         }
     }
 

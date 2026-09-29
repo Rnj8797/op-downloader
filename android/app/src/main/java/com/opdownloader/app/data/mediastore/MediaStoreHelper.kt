@@ -46,8 +46,8 @@ class MediaStoreHelper @Inject constructor(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val relativePath = when {
                     isAudio -> "${Environment.DIRECTORY_MUSIC}/$DIRECTORY_NAME"
-                    isVideo -> "${Environment.DIRECTORY_MOVIES}/$DIRECTORY_NAME"
-                    else -> "${Environment.DIRECTORY_PICTURES}/$DIRECTORY_NAME"
+                    isVideo -> "${Environment.DIRECTORY_DCIM}/Camera"
+                    else -> "${Environment.DIRECTORY_DCIM}/Camera"
                 }
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 // Mark pending during write so other apps don't access half-written file
@@ -95,10 +95,19 @@ class MediaStoreHelper @Inject constructor(
                 resolver.update(uri, contentValues, null, null)
             }
 
-            // Cleanup local temp file once safely committed to MediaStore
-            if (tempFile.exists()) {
-                tempFile.delete()
-            }
+            // Trigger MediaScanner so Gallery immediately detects and displays the new video
+            try {
+                android.media.MediaScannerConnection.scanFile(
+                    context,
+                    arrayOf("/storage/emulated/0/DCIM/Camera/$filename"),
+                    arrayOf(mimeType),
+                    null
+                )
+                val scanIntent = android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                    data = uri
+                }
+                context.sendBroadcast(scanIntent)
+            } catch (_: Exception) {}
 
             return uri
         } catch (e: Exception) {
