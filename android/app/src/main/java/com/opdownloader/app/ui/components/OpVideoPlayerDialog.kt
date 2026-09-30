@@ -264,12 +264,16 @@ fun OpVideoPlayerDialog(
 private fun openInSystemGallery(context: android.content.Context, file: File, isVideo: Boolean) {
     try {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        val mime = if (isVideo) "video/*" else "audio/*"
+        val mime = if (isVideo) "video/mp4" else "audio/mpeg"
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, mime)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(Intent.createChooser(intent, "Open Video"))
+        val chooser = Intent.createChooser(intent, "Open in Gallery").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooser)
     } catch (e: Exception) {
         Toast.makeText(context, "Cannot open gallery: ${e.message}", Toast.LENGTH_SHORT).show()
     }
@@ -278,13 +282,17 @@ private fun openInSystemGallery(context: android.content.Context, file: File, is
 private fun shareMedia(context: android.content.Context, file: File, isVideo: Boolean) {
     try {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        val mime = if (isVideo) "video/*" else "audio/*"
+        val mime = if (isVideo) "video/mp4" else "audio/mpeg"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = mime
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(Intent.createChooser(intent, "Share Media"))
+        val chooser = Intent.createChooser(intent, "Share Media").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooser)
     } catch (e: Exception) {
         Toast.makeText(context, "Cannot share media: ${e.message}", Toast.LENGTH_SHORT).show()
     }

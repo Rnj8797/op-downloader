@@ -479,7 +479,14 @@ fun HomeScreen(
                 items(recentItems, key = { it.id }) { item ->
                     RecentDownloadCard(
                         item = item,
-                        onPlayClick = { activePlayingItem = item }
+                        onPlayClick = {
+                            val file = item.filePath?.let { java.io.File(it) }
+                            if (file != null && file.exists() && file.length() > 0) {
+                                activePlayingItem = item
+                            } else {
+                                android.widget.Toast.makeText(context, "Media file not found on device.", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                 }
             }

@@ -46,7 +46,10 @@ data class DownloadTask(
     val speedText: String? = null,
     val etaText: String? = null,
     val dateText: String,
-    val filePath: String? = null
+    val filePath: String? = null,
+    val sourceUrl: String? = null,
+    val qualityId: String? = null,
+    val platformTitle: String? = null
 )
 
 @Composable
@@ -134,28 +137,53 @@ fun DownloadsScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredTasks, key = { it.id }) { task ->
-                        if (task.status == ItemStatus.DOWNLOADING || task.status == ItemStatus.PAUSED) {
-                            ActiveDownloadCard(
-                                task = task,
-                                onPauseToggle = {
-                                    if (task.status == ItemStatus.DOWNLOADING) {
-                                        com.opdownloader.app.data.DownloadStateManager.pauseDownload(task.id)
-                                    } else {
-                                        com.opdownloader.app.data.DownloadStateManager.resumeDownload(task.id)
+                        when (task.status) {
+                            ItemStatus.DOWNLOADING, ItemStatus.PAUSED -> {
+                                ActiveDownloadCard(
+                                    task = task,
+                                    onPauseToggle = {
+                                        if (task.status == ItemStatus.DOWNLOADING) {
+                                            com.opdownloader.app.data.DownloadStateManager.pauseDownload(task.id)
+                                        } else {
+                                            com.opdownloader.app.data.DownloadStateManager.resumeDownload(task.id)
+                                        }
+                                    },
+                                    onCancel = {
+                                        com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
                                     }
-                                },
-                                onCancel = {
-                                    com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
-                                }
-                            )
-                        } else {
-                            CompletedDownloadCard(
-                                task = task,
-                                onPlay = { playingTask = task },
-                                onDeleteHistory = {
-                                    com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
-                                }
-                            )
+                                )
+                            }
+                            ItemStatus.COMPLETED -> {
+                                CompletedDownloadCard(
+                                    task = task,
+                                    onPlay = {
+                                        val file = task.filePath?.let { java.io.File(it) }
+                                        if (file != null && file.exists() && file.length() > 0) {
+                                            playingTask = task
+                                        } else {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                "Media file not found on disk. Tap retry to download again.",
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    },
+                                    onDeleteHistory = {
+                                        com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
+                                    }
+                                )
+                            }
+                            ItemStatus.FAILED -> {
+                                FailedDownloadCard(
+                                    task = task,
+                                    onRetry = {
+                                        com.opdownloader.app.data.DownloadStateManager.retryDownload(context, task.id)
+                                    },
+                                    onDismiss = {
+                                        com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
+                                    }
+                                )
+                            }
                         }
                     }
 
@@ -468,6 +496,95 @@ fun CompletedDownloadCard(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Failed Download Item Card with Retry and Dismiss Actions
+ */
+@Composable
+fun FailedDownloadCard(
+    task: DownloadTask,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OpCard(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(StatusError.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = "Failed",
+                    tint = StatusError,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.filename,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
+                    ),
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = task.etaText ?: "Download interrupted",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = StatusError,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    maxLines = 1
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AccentPrimary)
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("RETRY", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+            ) {
+                Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("DISMISS", fontSize = 12.sp)
             }
         }
     }

@@ -16,6 +16,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Load any saved downloads from device storage
+        DownloadStateManager.initExistingDownloads(applicationContext)
+
         val sharedUrl = if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             intent.getStringExtra(Intent.EXTRA_TEXT)
         } else {

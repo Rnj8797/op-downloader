@@ -96,58 +96,76 @@ class MediaStoreHelper @Inject constructor(
                 }
             }
 
-            val relPath = when {
-                isAudio -> "${Environment.DIRECTORY_MUSIC}/$FOLDER_NAME"
-                isVideo -> "${Environment.DIRECTORY_DCIM}/$FOLDER_NAME"
-                else -> "${Environment.DIRECTORY_DCIM}/$FOLDER_NAME"
+            // In Android Q+, RELATIVE_PATH must end with a trailing slash
+            val candidateRelPaths = when {
+                isAudio -> listOf(
+                    "${Environment.DIRECTORY_MUSIC}/$FOLDER_NAME/",
+                    "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER_NAME/"
+                )
+                isVideo -> listOf(
+                    "${Environment.DIRECTORY_DCIM}/$FOLDER_NAME/",
+                    "${Environment.DIRECTORY_MOVIES}/$FOLDER_NAME/",
+                    "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER_NAME/"
+                )
+                else -> listOf(
+                    "${Environment.DIRECTORY_DCIM}/$FOLDER_NAME/",
+                    "${Environment.DIRECTORY_PICTURES}/$FOLDER_NAME/"
+                )
             }
 
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                put(MediaStore.MediaColumns.DATE_ADDED, System.currentTimeMillis() / 1000)
-                put(MediaStore.MediaColumns.DATE_MODIFIED, System.currentTimeMillis() / 1000)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, relPath)
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
-            }
-
-            mediaUri = resolver.insert(targetCollection, values)
-
-            if (mediaUri != null) {
-                // Write media bytes directly through ContentResolver stream
-                resolver.openOutputStream(mediaUri, "w")?.use { outStream ->
-                    FileInputStream(tempFile).use { inStream ->
-                        copyStream(inStream, outStream)
-                    }
-                }
-
-                // Clear IS_PENDING so the system Gallery immediately makes it visible
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val updateValues = ContentValues().apply {
-                        put(MediaStore.MediaColumns.IS_PENDING, 0)
-                    }
-                    try {
-                        resolver.update(mediaUri, updateValues, null, null)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Notice clearing IS_PENDING: ${e.message}")
-                    }
-                }
-
-                // Retrieve actual on-disk path if exposed by MediaStore
+            for (relPath in candidateRelPaths) {
                 try {
-                    resolver.query(mediaUri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) {
-                            val dataIdx = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
-                            if (dataIdx != -1) {
-                                physicalGalleryPath = cursor.getString(dataIdx)
-                            }
+                    val values = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                        put(MediaStore.MediaColumns.TITLE, filename.substringBeforeLast("."))
+                        put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                        put(MediaStore.MediaColumns.DATE_ADDED, System.currentTimeMillis() / 1000)
+                        put(MediaStore.MediaColumns.DATE_MODIFIED, System.currentTimeMillis() / 1000)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, relPath)
+                            put(MediaStore.MediaColumns.IS_PENDING, 1)
                         }
                     }
-                } catch (_: Exception) {}
 
-                Log.d(TAG, "MediaStore registered mediaUri: $mediaUri, path: $physicalGalleryPath")
+                    mediaUri = resolver.insert(targetCollection, values)
+                    if (mediaUri != null) {
+                        // Write media bytes directly through ContentResolver stream
+                        resolver.openOutputStream(mediaUri, "w")?.use { outStream ->
+                            FileInputStream(tempFile).use { inStream ->
+                                copyStream(inStream, outStream)
+                            }
+                        }
+
+                        // Clear IS_PENDING so system Gallery immediately indexes and displays the media
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            val updateValues = ContentValues().apply {
+                                put(MediaStore.MediaColumns.IS_PENDING, 0)
+                            }
+                            try {
+                                resolver.update(mediaUri, updateValues, null, null)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Notice clearing IS_PENDING: ${e.message}")
+                            }
+                        }
+
+                        // Retrieve actual on-disk path if exposed by MediaStore
+                        try {
+                            resolver.query(mediaUri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use { cursor ->
+                                if (cursor.moveToFirst()) {
+                                    val dataIdx = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+                                    if (dataIdx != -1) {
+                                        physicalGalleryPath = cursor.getString(dataIdx)
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {}
+
+                        Log.d(TAG, "MediaStore registered successfully in $relPath: $mediaUri (disk: $physicalGalleryPath)")
+                        break
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed inserting in $relPath, trying next: ${e.message}")
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed writing to MediaStore: ${e.message}", e)
