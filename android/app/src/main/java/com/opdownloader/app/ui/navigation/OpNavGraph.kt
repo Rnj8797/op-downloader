@@ -16,6 +16,7 @@ import com.opdownloader.app.ui.theme.BaseBackground
 
 @Composable
 fun OpNavGraph(
+    initialSharedUrl: String? = null,
     modifier: Modifier = Modifier
 ) {
     var currentScreen by remember { mutableStateOf("splash") }
@@ -45,6 +46,7 @@ fun OpNavGraph(
 
             when (currentScreen) {
                 "home" -> HomeScreen(
+                    initialUrl = initialSharedUrl ?: "",
                     onNavigateToDownloads = { currentScreen = "downloads" },
                     onNavigateToSettings = { currentScreen = "settings" },
                     onShowPreview = { url -> activePreviewUrl = url },

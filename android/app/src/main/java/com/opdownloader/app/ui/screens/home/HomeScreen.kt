@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,8 +42,8 @@ data class RecentDownloadItem(
     val sizeText: String,
     val isVideo: Boolean,
     val dateText: String,
-    val statusText: String = "✓ Saved to Gallery",
-    val mediaUri: String? = null
+    val statusText: String = "✓ Saved to Gallery • Tap to Play",
+    val filePath: String? = null
 )
 
 enum class LinkValidationState {
@@ -55,19 +56,31 @@ enum class LinkValidationState {
 
 @Composable
 fun HomeScreen(
+    initialUrl: String = "",
     onNavigateToDownloads: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onShowPreview: (url: String) -> Unit,
     onStartDownload: (url: String, quality: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    var urlText by remember { mutableStateOf("") }
-    var validationState by remember { mutableStateOf(LinkValidationState.IDLE) }
+    var urlText by rememberSaveable { mutableStateOf(initialUrl) }
     var detectedProviderName by remember { mutableStateOf("") }
-    var selectedQuality by remember { mutableStateOf("1080p") }
+    var validationState by remember {
+        mutableStateOf(
+            if (initialUrl.isNotBlank()) {
+                evaluateUrl(initialUrl) { detectedProviderName = it }
+            } else LinkValidationState.IDLE
+        )
+    }
+    var selectedQuality by rememberSaveable { mutableStateOf("1080p") }
     var activePlayingItem by remember { mutableStateOf<RecentDownloadItem?>(null) }
     val clipboardManager = LocalClipboardManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(Unit) {
+        com.opdownloader.app.data.DownloadStateManager.initExistingDownloads(context)
+    }
 
     // Real reactive recent downloads from DownloadStateManager
     val recentItems = com.opdownloader.app.data.DownloadStateManager.recentDownloads
@@ -476,11 +489,11 @@ fun HomeScreen(
             }
         }
 
-        // In-App Media Player Dialog
+        // In-App Video & Audio Player Dialog
         activePlayingItem?.let { item ->
-            OpMediaPlayerDialog(
-                mediaUriString = item.mediaUri,
-                filename = item.filename,
+            com.opdownloader.app.ui.components.OpVideoPlayerDialog(
+                title = item.filename,
+                filePath = item.filePath ?: "",
                 isVideo = item.isVideo,
                 onDismiss = { activePlayingItem = null }
             )
@@ -512,21 +525,26 @@ fun RecentDownloadCard(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceElevated),
+                .background(AccentPrimary.copy(alpha = 0.2f))
+                .clickable { onPlayClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = if (item.isVideo) Icons.Default.Movie else Icons.Default.Image,
-                contentDescription = if (item.isVideo) "Video file" else "Image file",
+                imageVector = if (item.isVideo) Icons.Default.PlayCircleFilled else Icons.Default.Image,
+                contentDescription = if (item.isVideo) "Play Video" else "View Image",
                 tint = AccentPrimary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
 
         Spacer(modifier = Modifier.width(14.dp))
 
         // File Details
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onPlayClick() }
+        ) {
             Text(
                 text = item.filename,
                 style = MaterialTheme.typography.bodyLarge.copy(

@@ -131,22 +131,17 @@ class ResumableDownloadWorker @AssistedInject constructor(
 
             // Download finished! Atomically insert into device MediaStore (Gallery)
             val isVideo = jobEntity.mediaType == "VIDEO"
-            val galleryUri = mediaStoreHelper.saveMediaToGallery(
+            val savedResult = mediaStoreHelper.saveMediaToGallery(
                 tempFile = tempFile,
                 filename = jobEntity.safeFilename,
                 mimeType = jobEntity.mimeType,
                 isVideo = isVideo
             )
 
-            if (galleryUri != null) {
-                downloadDao.updateStatus(jobId, DownloadStatus.COMPLETED.name)
-                notificationManager.showCompletionNotification(jobId, jobEntity.safeFilename)
-                notificationManager.cancelNotification(jobId)
-                Result.success()
-            } else {
-                downloadDao.updateStatus(jobId, DownloadStatus.FAILED.name)
-                Result.failure()
-            }
+            downloadDao.updateStatus(jobId, DownloadStatus.COMPLETED.name)
+            notificationManager.showCompletionNotification(jobId, jobEntity.safeFilename)
+            notificationManager.cancelNotification(jobId)
+            Result.success()
 
         } catch (e: Exception) {
             if (runAttemptCount < 3) {

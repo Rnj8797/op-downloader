@@ -46,7 +46,7 @@ data class DownloadTask(
     val speedText: String? = null,
     val etaText: String? = null,
     val dateText: String,
-    val mediaUri: String? = null
+    val filePath: String? = null
 )
 
 @Composable
@@ -55,7 +55,8 @@ fun DownloadsScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(DownloadTab.ALL) }
-    var activePlayingTask by remember { mutableStateOf<DownloadTask?>(null) }
+    var playingTask by remember { mutableStateOf<DownloadTask?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val tasks = com.opdownloader.app.data.DownloadStateManager.tasks
 
@@ -150,7 +151,7 @@ fun DownloadsScreen(
                         } else {
                             CompletedDownloadCard(
                                 task = task,
-                                onPlay = { activePlayingTask = task },
+                                onPlay = { playingTask = task },
                                 onDeleteHistory = {
                                     com.opdownloader.app.data.DownloadStateManager.cancelDownload(task.id)
                                 }
@@ -161,16 +162,17 @@ fun DownloadsScreen(
                     item { Spacer(modifier = Modifier.height(30.dp)) }
                 }
             }
-        }
 
-        // In-App Media Player Dialog
-        activePlayingTask?.let { task ->
-            OpMediaPlayerDialog(
-                mediaUriString = task.mediaUri,
-                filename = task.filename,
-                isVideo = task.isVideo,
-                onDismiss = { activePlayingTask = null }
-            )
+            // In-App Video Player Dialog
+            playingTask?.let { task ->
+                val path = task.filePath ?: ""
+                com.opdownloader.app.ui.components.OpVideoPlayerDialog(
+                    title = task.filename,
+                    filePath = path,
+                    isVideo = task.isVideo,
+                    onDismiss = { playingTask = null }
+                )
+            }
         }
     }
 }
@@ -318,10 +320,12 @@ fun CompletedDownloadCard(
     onDeleteHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    OpCard(modifier = modifier.clickable { onPlay() }) {
+    OpCard(
+        modifier = modifier.clickable { onPlay() }
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -330,21 +334,25 @@ fun CompletedDownloadCard(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(AccentPrimary.copy(alpha = 0.15f))
+                    .background(AccentPrimary.copy(alpha = 0.2f))
                     .clickable { onPlay() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play",
+                    imageVector = if (task.isVideo) Icons.Default.PlayCircleFilled else Icons.Default.Image,
+                    contentDescription = "Play media",
                     tint = AccentPrimary,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onPlay() }
+            ) {
                 Text(
                     text = task.filename,
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -367,26 +375,11 @@ fun CompletedDownloadCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 OpStatusBadge(
-                    statusText = "✓ Saved to Gallery",
+                    statusText = "✓ Saved to Gallery • Tap to Play",
                     icon = Icons.Default.CheckCircle,
                     color = StatusSuccess
                 )
             }
-
-            // Quick Play Button
-            Button(
-                onClick = onPlay,
-                colors = ButtonDefaults.buttonColors(containerColor = AccentPrimary),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                modifier = Modifier.height(34.dp)
-            ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(15.dp))
-                Spacer(modifier = Modifier.width(3.dp))
-                Text("PLAY", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp))
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
 
             // More Options Menu
             Box {
@@ -408,18 +401,35 @@ fun CompletedDownloadCard(
                 ) {
                     DropdownMenuItem(
                         text = { Text("Play in App", color = TextPrimary) },
-                        leadingIcon = { Icon(Icons.Default.PlayCircle, contentDescription = null, tint = AccentPrimary) },
+                        leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null, tint = AccentPrimary) },
                         onClick = {
                             showMenu = false
                             onPlay()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Open in Phone Gallery", color = TextPrimary) },
+                        text = { Text("Open in Gallery", color = TextPrimary) },
                         leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = TextPrimary) },
                         onClick = {
                             showMenu = false
-                            openInSystemGallery(context, task.mediaUri?.let { android.net.Uri.parse(it) }, task.isVideo)
+                            task.filePath?.let { path ->
+                                val file = java.io.File(path)
+                                if (file.exists()) {
+                                    try {
+                                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider",
+                                            file
+                                        )
+                                        val mime = if (task.isVideo) "video/*" else "audio/*"
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, mime)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(intent, "Open in Gallery"))
+                                    } catch (_: Exception) {}
+                                }
+                            }
                         }
                     )
                     DropdownMenuItem(
@@ -427,7 +437,25 @@ fun CompletedDownloadCard(
                         leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = TextPrimary) },
                         onClick = {
                             showMenu = false
-                            shareSystemMedia(context, task.mediaUri?.let { android.net.Uri.parse(it) }, task.isVideo)
+                            task.filePath?.let { path ->
+                                val file = java.io.File(path)
+                                if (file.exists()) {
+                                    try {
+                                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider",
+                                            file
+                                        )
+                                        val mime = if (task.isVideo) "video/*" else "audio/*"
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = mime
+                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(intent, "Share Media"))
+                                    } catch (_: Exception) {}
+                                }
+                            }
                         }
                     )
                     Divider(color = SurfaceBorder)
