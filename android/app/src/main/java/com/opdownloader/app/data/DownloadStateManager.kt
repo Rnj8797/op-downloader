@@ -41,20 +41,6 @@ object DownloadStateManager {
         .followRedirects(true)
         .build()
 
-    // Verified high-speed CDN video candidates guaranteeing 100% playable video & audio without 403 errors
-    private val FALLBACK_VIDEO_URLS = listOf(
-        "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        "https://www.w3schools.com/html/mov_bbb.mp4",
-        "https://archive.org/download/SampleVideo1280x7205mb/SampleVideo_1280x720_5mb.mp4",
-        "https://raw.githubusercontent.com/mediaelement/mediaelement-files/master/big_buck_bunny.mp4"
-    )
-
-    private val FALLBACK_AUDIO_URLS = listOf(
-        "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
-    )
-
-    private const val FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1080&q=80"
-
     /**
      * Initializes existing saved downloads from disk on startup
      */
@@ -132,23 +118,24 @@ object DownloadStateManager {
             else -> "jpg"
         }
 
-        val cleanTitle = platformTitle
-            .replace(Regex("""[^a-zA-Z0-9_-]"""), "_")
-            .trim('_')
+        val initialCleanTitle = platformTitle
+            .replace(Regex("""[^a-zA-Z0-9_\-\s]"""), "")
+            .trim()
+            .replace(Regex("""\s+"""), "_")
             .ifBlank { "Media" }
 
-        val filename = "${cleanTitle}_${qualityId}_${System.currentTimeMillis() % 10000}.$ext"
+        val initialFilename = "${initialCleanTitle}_${qualityId}_${System.currentTimeMillis() % 10000}.$ext"
 
         val initialTask = DownloadTask(
             id = taskId,
-            filename = filename,
+            filename = initialFilename,
             isVideo = isVideo && !isAudio,
             status = ItemStatus.DOWNLOADING,
             progress = 0.05f,
-            downloadedBytesText = "0.5 MB",
+            downloadedBytesText = "0.1 MB",
             totalBytesText = sizeText,
-            speedText = "Connecting...",
-            etaText = "Starting download...",
+            speedText = "Resolving stream...",
+            etaText = "Connecting...",
             dateText = "Just now",
             filePath = null,
             sourceUrl = url,
@@ -161,31 +148,108 @@ object DownloadStateManager {
 
         val job = scope.launch(Dispatchers.IO) {
             try {
-                // Build list of candidate URLs to try in order
                 val candidates = mutableListOf<String>()
+                var resolvedTitle: String = platformTitle
                 val lower = url.lowercase()
 
-                // If user provided a direct playable stream URL, try it first
-                if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mp3") ||
-                    lower.endsWith(".jpg") || lower.endsWith(".png") || lower.endsWith(".jpeg")
+                withContext(Dispatchers.Main) {
+                    val index = tasks.indexOfFirst { it.id == taskId }
+                    if (index != -1) {
+                        tasks[index] = tasks[index].copy(
+                            speedText = "Extracting video...",
+                            etaText = "Analyzing link..."
+                        )
+                    }
+                }
+
+                // 1. YouTube extractor (Native InnerTube + Invidious fallback)
+                if (YouTubeExtractor.isYouTubeUrl(url)) {
+                    val videoId = YouTubeExtractor.extractVideoId(url)
+                    if (videoId != null) {
+                        val ytResult = YouTubeExtractor.extractMedia(httpClient, videoId)
+                        if (ytResult != null) {
+                            resolvedTitle = ytResult.title
+                            val stream = if (isAudio && !ytResult.audioUrl.isNullOrBlank()) {
+                                ytResult.audioUrl
+                            } else {
+                                ytResult.videoUrl
+                            }
+                            candidates.add(stream)
+                        }
+                    }
+                }
+                // 2. TikTok extractor (Native TikWM high-speed unwatermarked stream)
+                else if (TikTokExtractor.isTikTokUrl(url)) {
+                    val ttResult = TikTokExtractor.extractMedia(httpClient, url)
+                    if (ttResult != null) {
+                        resolvedTitle = ttResult.title
+                        val stream = if (isAudio && !ttResult.audioUrl.isNullOrBlank()) {
+                            ttResult.audioUrl
+                        } else {
+                            ttResult.videoUrl
+                        }
+                        candidates.add(stream)
+                    }
+                }
+                // 3. Instagram extractor
+                else if (InstagramExtractor.isInstagramUrl(url)) {
+                    val shortcode = InstagramExtractor.extractShortcode(url)
+                    if (shortcode != null) {
+                        val igResult = InstagramExtractor.extractMedia(httpClient, shortcode)
+                        if (igResult != null) {
+                            resolvedTitle = igResult.title
+                            candidates.add(igResult.videoUrl)
+                        }
+                    }
+                }
+                // 4. Direct playable video / audio stream
+                else if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") ||
+                    lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".m4a") ||
+                    lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")
                 ) {
                     candidates.add(url)
                 }
+                // 5. General web page with OpenGraph or HTML5 video tag
+                else {
+                    val ogStream = extractOpenGraphMedia(url)
+                    if (ogStream != null) {
+                        candidates.add(ogStream)
+                    }
+                }
 
-                // Add reliable high-speed fallback URLs
-                if (isAudio) {
-                    candidates.addAll(FALLBACK_AUDIO_URLS)
-                } else if (isVideo) {
-                    candidates.addAll(FALLBACK_VIDEO_URLS)
-                } else {
-                    candidates.add(FALLBACK_IMAGE_URL)
+                // If no real stream could be extracted, do NOT download a flower video.
+                // Fail explicitly so the user knows what happened.
+                if (candidates.isEmpty()) {
+                    throw Exception("Could not extract video stream. Please ensure the link is public or direct.")
+                }
+
+                // Sanitize resolved title and build real filename
+                val cleanResolved = resolvedTitle
+                    .replace(Regex("""[^a-zA-Z0-9_\-\s]"""), "")
+                    .trim()
+                    .replace(Regex("""\s+"""), "_")
+                    .take(45)
+                    .ifBlank { "Media" }
+
+                val finalFilename = "${cleanResolved}_${qualityId}.$ext"
+
+                withContext(Dispatchers.Main) {
+                    val index = tasks.indexOfFirst { it.id == taskId }
+                    if (index != -1) {
+                        tasks[index] = tasks[index].copy(
+                            filename = finalFilename,
+                            platformTitle = resolvedTitle,
+                            speedText = "Starting download...",
+                            etaText = "Connecting to stream..."
+                        )
+                    }
                 }
 
                 performLiveStreamDownload(
                     context = context,
                     taskId = taskId,
                     streamCandidates = candidates,
-                    filename = filename,
+                    filename = finalFilename,
                     ext = ext,
                     isVideo = isVideo && !isAudio,
                     isAudio = isAudio,
@@ -199,10 +263,10 @@ object DownloadStateManager {
                         tasks[index] = tasks[index].copy(
                             status = ItemStatus.FAILED,
                             speedText = null,
-                            etaText = "Download failed: ${e.localizedMessage ?: "Network error"}"
+                            etaText = "Download failed: ${e.localizedMessage ?: "Stream error"}"
                         )
                     }
-                    Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             } finally {
                 activeJobs.remove(taskId)
@@ -210,6 +274,41 @@ object DownloadStateManager {
         }
 
         activeJobs[taskId] = job
+    }
+
+    /**
+     * Extracts OpenGraph or HTML5 video tags from public web links
+     */
+    private fun extractOpenGraphMedia(rawUrl: String): String? {
+        return try {
+            val request = Request.Builder()
+                .url(rawUrl)
+                .addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
+                .build()
+
+            httpClient.newCall(request).execute().use { resp ->
+                if (!resp.isSuccessful) return null
+                val contentType = resp.header("Content-Type")?.lowercase() ?: ""
+                if (contentType.startsWith("video/") || contentType.startsWith("audio/")) {
+                    return rawUrl
+                }
+                val html = resp.body?.string() ?: return null
+
+                val ogMatch = Regex("""<meta\s+property=["']og:video(?::secure_url)?["']\s+content=["']([^"']+)["']""", RegexOption.IGNORE_CASE).find(html)
+                    ?: Regex("""<meta\s+content=["']([^"']+)["']\s+property=["']og:video(?::secure_url)?["']""", RegexOption.IGNORE_CASE).find(html)
+                if (ogMatch != null) {
+                    return ogMatch.groupValues[1]
+                }
+
+                val vidMatch = Regex("""<video[^>]+src=["']([^"']+\.mp4[^"']*)["']""", RegexOption.IGNORE_CASE).find(html)
+                if (vidMatch != null) {
+                    return vidMatch.groupValues[1]
+                }
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
@@ -266,7 +365,8 @@ object DownloadStateManager {
                     val buffer = ByteArray(64 * 1024)
                     var downloaded = 0L
                     var read: Int
-                    var lastUpdate = System.currentTimeMillis()
+                    val startTime = System.currentTimeMillis()
+                    var lastUpdate = startTime
 
                     while (inputStream.read(buffer).also { read = it } != -1) {
                         while (pausedJobs[taskId] == true) {
@@ -282,14 +382,24 @@ object DownloadStateManager {
                             val progress = (downloaded.toFloat() / totalBytes.toFloat()).coerceIn(0.08f, 0.96f)
                             val currentMb = String.format("%.1f MB", downloaded / (1024f * 1024f))
 
+                            // Calculate real live speed and ETA
+                            val elapsedSec = (now - startTime) / 1000f
+                            val speedBytesPerSec = if (elapsedSec > 0.3f) (downloaded / elapsedSec) else 0f
+                            val speedMb = speedBytesPerSec / (1024f * 1024f)
+                            val speedText = if (speedMb > 0.05f) String.format("%.1f MB/s", speedMb) else "Downloading..."
+
+                            val remainingBytes = (totalBytes - downloaded).coerceAtLeast(0L)
+                            val etaSec = if (speedBytesPerSec > 1024f) (remainingBytes / speedBytesPerSec).toInt() else 0
+                            val etaText = if (etaSec > 0) "${etaSec / 60}:${String.format("%02d", etaSec % 60)} remaining" else "Finishing..."
+
                             withContext(Dispatchers.Main) {
                                 val index = tasks.indexOfFirst { it.id == taskId }
                                 if (index != -1) {
                                     tasks[index] = tasks[index].copy(
                                         progress = progress,
                                         downloadedBytesText = currentMb,
-                                        speedText = "14.2 MB/s",
-                                        etaText = "0:02 remaining"
+                                        speedText = speedText,
+                                        etaText = etaText
                                     )
                                 }
                             }
@@ -303,7 +413,8 @@ object DownloadStateManager {
 
                 // Verify downloaded file is non-empty
                 if (tempFile.exists() && tempFile.length() > 0L) {
-                    Log.d(TAG, "Stream successfully downloaded: ${tempFile.length()} bytes")
+                    val finalSizeMb = String.format("%.1f MB", tempFile.length() / (1024f * 1024f))
+                    Log.d(TAG, "Stream successfully downloaded: ${tempFile.length()} bytes ($finalSizeMb)")
 
                     // Save completed media file to Android MediaStore and internal storage
                     val mediaStore = MediaStoreHelper(context)
@@ -324,7 +435,7 @@ object DownloadStateManager {
                         context = context,
                         taskId = taskId,
                         filename = filename,
-                        sizeText = sizeText,
+                        sizeText = finalSizeMb,
                         isVideo = isVideo,
                         filePath = saveResult.absolutePath
                     )
@@ -362,6 +473,7 @@ object DownloadStateManager {
                     status = ItemStatus.COMPLETED,
                     progress = 1.0f,
                     downloadedBytesText = sizeText,
+                    totalBytesText = sizeText,
                     speedText = null,
                     etaText = null,
                     dateText = "Just now",
